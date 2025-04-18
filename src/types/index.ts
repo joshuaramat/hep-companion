@@ -1,4 +1,5 @@
 export interface ExerciseSuggestion {
+  id: string;
   exercise_name: string;
   sets: number;
   reps: number;

@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { ExerciseSuggestion } from '@/types';
+import Header from './Header';
+import Footer from './Footer';
 
 interface ExerciseSuggestionsDisplayProps {
   suggestions: ExerciseSuggestion[];
   onFeedbackChange?: (suggestionId: string, score: number, comment?: string) => void;
+  onSubmitFeedback?: () => void;
 }
 
 // Sample exercise-specific research articles
@@ -65,19 +68,59 @@ const RESEARCH_ARTICLES = {
   ]
 };
 
+// Helper function for emoji ratings
+function getEmoji(score: number): string {
+  return ['😕', '🙁', '😐', '🙂', '😊'][score - 1];
+}
+
 export default function ExerciseSuggestionsDisplay({ 
   suggestions,
-  onFeedbackChange 
+  onFeedbackChange,
+  onSubmitFeedback
 }: ExerciseSuggestionsDisplayProps) {
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
   const [feedback, setFeedback] = useState<Record<string, { score: number; comment?: string }>>({});
+  const [error, setError] = useState<{ message: string; componentId?: string } | null>(null);
+  const [isRated, setIsRated] = useState<Record<string, boolean>>({});
+  const [activeSection, setActiveSection] = useState<Record<string, string>>({});
 
   const handleFeedbackChange = (suggestionId: string, score: number, comment?: string) => {
-    setFeedback(prev => ({
-      ...prev,
-      [suggestionId]: { score, comment }
-    }));
-    onFeedbackChange?.(suggestionId, score, comment);
+    // If clicking the same score, unselect it
+    if (feedback[suggestionId]?.score === score) {
+      setFeedback(prev => ({
+        ...prev,
+        [suggestionId]: { score: 0, comment: prev[suggestionId]?.comment }
+      }));
+      setIsRated(prev => ({ ...prev, [suggestionId]: false }));
+      setActiveSection(prev => ({ ...prev, [suggestionId]: '' }));
+      onFeedbackChange?.(suggestionId, 0, comment);
+    } else {
+      setFeedback(prev => ({
+        ...prev,
+        [suggestionId]: { score, comment }
+      }));
+      setIsRated(prev => ({ ...prev, [suggestionId]: true }));
+      setActiveSection(prev => ({ ...prev, [suggestionId]: 'comment' }));
+      onFeedbackChange?.(suggestionId, score, comment);
+    }
+    setError(null);
+  };
+
+  const handleSubmit = () => {
+    const missingRatings = suggestions
+      .slice(0, 3)
+      .filter(suggestion => !feedback[suggestion.id]?.score)
+      .map(suggestion => suggestion.id);
+
+    if (missingRatings.length > 0) {
+      setError({
+        message: `Please rate ${missingRatings.length} more exercise${missingRatings.length > 1 ? 's' : ''}`,
+        componentId: missingRatings[0]
+      });
+      return;
+    }
+
+    onSubmitFeedback?.();
   };
 
   const toggleSources = (suggestionId: string) => {
@@ -94,132 +137,182 @@ export default function ExerciseSuggestionsDisplay({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          Recommended Exercises
-        </h2>
-        <p className="text-gray-600">
-          Based on evidence-based physical therapy practices and clinical guidelines
-        </p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {suggestions.map((suggestion, index) => {
-          const articles = getExerciseArticles(suggestion.exercise_name);
+    <div className="flex flex-col min-h-screen">
+      <Header 
+        progress={Object.keys(feedback).length}
+        total={Math.min(suggestions.length, 3)}
+        error={error?.message}
+      />
+      <div className="flex-1 w-full pt-20 pb-24">
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold heading-gradient mb-4">
+              Your Personalized Exercise Plan
+            </h2>
+            <p className="text-gray-700 max-w-2xl mx-auto">
+              Based on evidence-based physical therapy practices and clinical guidelines. 
+              Each exercise is supported by peer-reviewed research.
+            </p>
+          </div>
           
-          return (
-            <div 
-              key={index}
-              className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
-            >
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                  {suggestion.exercise_name}
-                </h3>
-                
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-center">
-                    <span className="text-gray-600 w-24">Sets:</span>
-                    <span className="font-medium text-gray-800">{suggestion.sets}</span>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <span className="text-gray-600 w-24">Reps:</span>
-                    <span className="font-medium text-gray-800">{suggestion.reps}</span>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <span className="text-gray-600 w-24">Frequency:</span>
-                    <span className="font-medium text-gray-800">{suggestion.frequency}</span>
-                  </div>
-                </div>
+          <div className="flex flex-col lg:flex-row justify-center gap-8 lg:gap-12 mb-16">
+            {suggestions.slice(0, 3).map((suggestion) => {
+              const isErrorComponent = error?.componentId === suggestion.id;
+              return (
+                <div 
+                  key={suggestion.id}
+                  className={`exercise-card ${
+                    isErrorComponent ? 'exercise-card-error' : ''
+                  } ${
+                    isRated[suggestion.id] ? 'exercise-card-rated' : ''
+                  }`}
+                >
+                  <div className="p-6 flex-1 flex flex-col gap-6">
+                    {/* Stage 1: Exercise Info */}
+                    <div className="exercise-info">
+                      <div className="h-24 flex items-center justify-center">
+                        <h3 className="text-2xl font-bold heading-gradient text-center">
+                          {suggestion.exercise_name}
+                        </h3>
+                      </div>
+                      
+                      <div className="mt-4">
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="exercise-metric">
+                            <div className="exercise-metric-label">Sets</div>
+                            <div className="exercise-metric-value">{suggestion.sets}</div>
+                          </div>
+                          <div className="exercise-metric">
+                            <div className="exercise-metric-label">Reps</div>
+                            <div className="exercise-metric-value">{suggestion.reps}</div>
+                          </div>
+                        </div>
+                        <div className="exercise-metric">
+                          <div className="exercise-metric-label">Frequency</div>
+                          <div className="exercise-metric-value">{suggestion.frequency}</div>
+                        </div>
+                      </div>
+                    </div>
 
-                {/* Sources Section */}
-                <div className="mt-4 border-t border-gray-200 pt-4">
-                  <button
-                    onClick={() => toggleSources(index.toString())}
-                    className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
-                  >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    View Supporting Research
-                  </button>
-                  
-                  {expandedSources[index.toString()] && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      <p className="mb-2">This exercise is supported by peer-reviewed research:</p>
-                      <ul className="space-y-3">
-                        {suggestion.citations?.map((citation, citationIndex) => (
-                          <li key={citationIndex} className="border-l-2 border-indigo-200 pl-3">
-                            <a 
-                              href={citation.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-indigo-600 hover:text-indigo-800 hover:underline"
-                            >
-                              {citation.title}
-                            </a>
-                            <div className="text-xs text-gray-500 mt-1">
-                              <p>{citation.authors}</p>
-                              <p>{citation.journal}, {citation.year}</p>
-                              {citation.doi && <p>DOI: {citation.doi}</p>}
-                            </div>
-                          </li>
+                    {/* Stage 2: Rating */}
+                    <div className="rating-container">
+                      <h4 className="rating-title">
+                        How helpful is this suggestion?
+                      </h4>
+                      <div className="rating-scale">
+                        {[1, 2, 3, 4, 5].map((score) => (
+                          <button
+                            key={score}
+                            onClick={() => handleFeedbackChange(suggestion.id, score)}
+                            role="radio"
+                            aria-checked={feedback[suggestion.id]?.score === score}
+                            aria-label={`Rate ${score} out of 5`}
+                            className={`rating-button ${
+                              feedback[suggestion.id]?.score === score
+                                ? 'rating-button-active'
+                                : isErrorComponent
+                                  ? 'rating-button-error'
+                                  : ''
+                            }`}
+                          >
+                            {getEmoji(score)}
+                          </button>
                         ))}
-                      </ul>
-                      <p className="mt-2 text-xs text-gray-500">
-                        Note: These are research-based references. For specific clinical guidance, please consult with your healthcare provider.
-                      </p>
+                      </div>
+                      <div className="rating-label">
+                        {feedback[suggestion.id]?.score 
+                          ? `You rated this ${feedback[suggestion.id].score} out of 5`
+                          : 'Click to rate this suggestion'}
+                      </div>
                     </div>
-                  )}
-                </div>
 
-                {/* Feedback Section */}
-                <div className="mt-4 border-t border-gray-200 pt-4">
-                  <div className="mb-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      How relevant is this exercise for your needs?
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="5"
-                      value={feedback[index]?.score || 3}
-                      onChange={(e) => handleFeedbackChange(index.toString(), parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>Not Relevant</span>
-                      <span>Very Relevant</span>
-                    </div>
+                    {/* Comment Section */}
+                    {feedback[suggestion.id]?.score > 0 && (
+                      <div className={`
+                        transition-all duration-500 transform
+                        ${activeSection[suggestion.id] === 'comment' ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}
+                      `}>
+                        <label className="label text-center">
+                          Want to add more details? (optional)
+                        </label>
+                        <textarea
+                          placeholder="What made this suggestion helpful or not helpful?"
+                          value={feedback[suggestion.id]?.comment || ''}
+                          onChange={(e) => handleFeedbackChange(
+                            suggestion.id,
+                            feedback[suggestion.id]?.score || 0,
+                            e.target.value
+                          )}
+                          className="input-field border-cyan-100 rounded-xl focus:ring-cyan-300 focus:border-cyan-300"
+                          rows={2}
+                        />
+                      </div>
+                    )}
+
+                    {/* Research Evidence Button */}
+                    <button
+                      onClick={() => toggleSources(suggestion.id)}
+                      className="w-full py-4 px-6 text-base flex items-center justify-between
+                               touch-target-min-h-[48px] active:bg-cyan-700
+                               hover:shadow-lg transition-all duration-300
+                               btn-gradient rounded-lg mt-auto"
+                    >
+                      <span className="flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        View Research Evidence
+                      </span>
+                      <svg 
+                        className={`w-5 h-5 transition-transform duration-300 transform ${
+                          expandedSources[suggestion.id] ? 'rotate-90' : ''
+                        }`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+
+                    {/* Research Evidence Content */}
+                    {expandedSources[suggestion.id] && (
+                      <div className="research-evidence">
+                        <p className="research-evidence-title">Supporting Research:</p>
+                        <ul className="space-y-3">
+                          {suggestion.citations?.map((citation, citationIndex) => (
+                            <li key={citationIndex} className="research-evidence-item">
+                              <a 
+                                href={citation.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="research-evidence-link"
+                              >
+                                {citation.title}
+                              </a>
+                              <div className="research-evidence-meta">
+                                <p>{citation.authors}</p>
+                                <p>{citation.journal}, {citation.year}</p>
+                                {citation.doi && <p>DOI: {citation.doi}</p>}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
-
-                  <div>
-                    <label htmlFor={`comment-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
-                      Additional Notes (optional)
-                    </label>
-                    <textarea
-                      id={`comment-${index}`}
-                      value={feedback[index]?.comment || ''}
-                      onChange={(e) => handleFeedbackChange(index.toString(), feedback[index]?.score || 3, e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      rows={2}
-                      placeholder="Any specific notes about this exercise..."
-                    />
-                  </div>
                 </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
 
-      <div className="mt-8 text-center text-sm text-gray-500">
-        <p>All suggestions are based on current evidence-based practices in physical therapy.</p>
-        <p className="mt-1">For personalized medical advice, please consult with your healthcare provider.</p>
+          <div className="text-center text-sm text-gray-600 mb-8">
+            <p>All suggestions are based on current evidence-based practices in physical therapy.</p>
+            <p className="mt-1">For personalized medical advice, please consult with your healthcare provider.</p>
+          </div>
+        </div>
       </div>
+      <Footer />
     </div>
   );
 } 

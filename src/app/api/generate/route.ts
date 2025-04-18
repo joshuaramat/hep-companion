@@ -90,7 +90,10 @@ export async function POST(request: Request) {
       if (!suggestion.citations || !Array.isArray(suggestion.citations)) {
         throw new Error('Invalid suggestion: missing or invalid citations');
       }
-      return suggestion;
+      return {
+        ...suggestion,
+        id: nanoid(8)
+      };
     });
 
     // Generate a short ID for the suggestions
@@ -98,7 +101,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       id: suggestionId,
-      suggestions: validatedSuggestions 
+      suggestions: validatedSuggestions
     });
   } catch (error) {
     console.error('Error generating suggestions:', error);

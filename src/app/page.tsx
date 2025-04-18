@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingSuggestions from '@/components/LoadingSuggestions';
 
@@ -9,11 +9,13 @@ export default function HomePage() {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isSubmitting = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt.trim()) return;
+    if (!prompt.trim() || isSubmitting.current) return;
 
+    isSubmitting.current = true;
     setIsLoading(true);
     setError(null);
 
@@ -43,6 +45,7 @@ export default function HomePage() {
       setError(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
+      isSubmitting.current = false;
     }
   };
 
