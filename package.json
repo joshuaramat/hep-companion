@@ -1,0 +1,46 @@
+{
+  "name": "hep-companion",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.39.3",
+    "autoprefixer": "^10.4.17",
+    "nanoid": "^5.1.5",
+    "next": "^14.2.28",
+    "openai": "^4.95.0",
+    "postcss": "^8.4.35",
+    "postgres": "^3.4.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwindcss": "^3.4.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "14.1.0",
+    "typescript": "^5.3.3"
+  },
+  "description": "An AI-powered tool for physical therapists to generate personalized home exercise programs for their patients.",
+  "main": "next.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joshuaramat/hep-companion.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/joshuaramat/hep-companion/issues"
+  },
+  "homepage": "https://github.com/joshuaramat/hep-companion#readme"
+}
