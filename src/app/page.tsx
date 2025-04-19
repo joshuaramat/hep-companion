@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import LoadingSuggestions from '@/components/LoadingSuggestions';
+import LoadingSuggestions from '@/shared/components/LoadingSuggestions';
 
 export default function HomePage() {
   const router = useRouter();

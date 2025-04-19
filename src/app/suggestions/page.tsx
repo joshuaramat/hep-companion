@@ -2,8 +2,8 @@
 
 import { useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExerciseSuggestion } from '@/types';
-import ExerciseSuggestionsDisplay from '@/components/ExerciseSuggestionsDisplay';
+import { ExerciseSuggestion } from '@/core/types';
+import ExerciseSuggestionsDisplay from '@/shared/components/ExerciseSuggestionsDisplay';
 
 export default function SuggestionsPage() {
   const router = useRouter();
