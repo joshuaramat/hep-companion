@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import LoadingSuggestions from '@/shared/components/LoadingSuggestions';
+import LoadingSuggestions from '@/components/features/LoadingSuggestions';
 
 export default function HomePage() {
   const router = useRouter();
@@ -50,46 +50,76 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
-      <div className="max-w-2xl w-full">
-        <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
-          Exercise Suggestion Generator
-        </h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto pt-32 px-4">
+        {/* Clinical Scenario Section - Will animate to new position */}
+        <div 
+          className={`mb-8 bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl shadow-sm border border-gray-200 transition-all duration-700 ease-in-out ${
+            isLoading ? 'translate-y-[-200px] scale-90' : ''
+          }`}
+        >
+          <div className="text-center">
+            <h1 className={`text-4xl font-bold heading-gradient mb-4 transition-all duration-700 ease-in-out ${
+              isLoading ? 'text-2xl' : ''
+            }`}>
+              {isLoading ? 'Your Clinical Scenario' : 'Exercise Suggestion Generator'}
+            </h1>
+            <p className={`text-gray-700 max-w-2xl mx-auto transition-all duration-700 ease-in-out ${
+              isLoading ? 'text-sm' : ''
+            }`}>
+              {isLoading ? prompt : 'Enter your clinical scenario or exercise needs below, and we\'ll generate personalized exercise suggestions based on evidence-based physical therapy practices.'}
+            </p>
+          </div>
+        </div>
 
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+            {error}
+          </div>
+        )}
+
+        {/* Form Section - Will animate to new position */}
+        <div 
+          className={`bg-white rounded-xl shadow-md p-6 transition-all duration-700 ease-in-out ${
+            isLoading ? 'translate-y-[-200px] scale-90' : ''
+          }`}
+        >
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
-                Describe your exercise needs
+                Clinical Scenario or Exercise Needs
               </label>
               <textarea
                 id="prompt"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                rows={4}
-                placeholder="e.g., I want to build upper body strength with dumbbells at home..."
+                className="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                rows={6}
+                placeholder="e.g., Patient presents with chronic lower back pain and limited mobility. Looking for exercises to improve core strength and flexibility..."
                 disabled={isLoading}
               />
             </div>
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-                {error}
-              </div>
+            {!isLoading && (
+              <button
+                type="submit"
+                disabled={isLoading || !prompt.trim()}
+                className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 px-4 rounded-lg hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                Generate Exercise Suggestions
+              </button>
             )}
-
-            <button
-              type="submit"
-              disabled={isLoading || !prompt.trim()}
-              className="w-full bg-indigo-600 text-white py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-            >
-              {isLoading ? 'Generating...' : 'Generate Suggestions'}
-            </button>
           </form>
         </div>
 
-        {isLoading && <LoadingSuggestions />}
+        {/* Loading Skeleton - Will fade in as form animates up */}
+        <div 
+          className={`transition-all duration-700 ease-in-out ${
+            isLoading ? 'opacity-100 -mt-48' : 'opacity-0'
+          }`}
+        >
+          {isLoading && <LoadingSuggestions />}
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ExerciseSuggestion } from '@/types';
-import Header from './Header';
-import Footer from './Footer';
+import Header from '../layout/Header';
+import { motion } from 'framer-motion';
 
 interface ExerciseSuggestionsDisplayProps {
   suggestions: ExerciseSuggestion[];
@@ -83,6 +83,7 @@ export default function ExerciseSuggestionsDisplay({
   const [error, setError] = useState<{ message: string; componentId?: string } | null>(null);
   const [isRated, setIsRated] = useState<Record<string, boolean>>({});
   const [activeSection, setActiveSection] = useState<Record<string, string>>({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleFeedbackChange = (suggestionId: string, score: number, comment?: string) => {
     // If clicking the same score, unselect it
@@ -120,6 +121,7 @@ export default function ExerciseSuggestionsDisplay({
       return;
     }
 
+    setIsSubmitted(true);
     onSubmitFeedback?.();
   };
 
@@ -142,10 +144,21 @@ export default function ExerciseSuggestionsDisplay({
         progress={Object.keys(feedback).length}
         total={Math.min(suggestions.length, 3)}
         error={error?.message}
+        isSubmitted={isSubmitted}
       />
-      <div className="flex-1 w-full pt-20 pb-24">
+      <motion.div 
+        className="flex-1 w-full pt-20 pb-24"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
             <h2 className="text-4xl font-bold heading-gradient mb-4">
               Your Personalized Exercise Plan
             </h2>
@@ -153,14 +166,22 @@ export default function ExerciseSuggestionsDisplay({
               Based on evidence-based physical therapy practices and clinical guidelines. 
               Each exercise is supported by peer-reviewed research.
             </p>
-          </div>
+          </motion.div>
           
-          <div className="flex flex-col lg:flex-row justify-center gap-8 lg:gap-12 mb-16">
-            {suggestions.slice(0, 3).map((suggestion) => {
+          <motion.div 
+            className="flex flex-col lg:flex-row justify-center gap-8 lg:gap-12 mb-16"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            {suggestions.slice(0, 3).map((suggestion, index) => {
               const isErrorComponent = error?.componentId === suggestion.id;
               return (
-                <div 
+                <motion.div
                   key={suggestion.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
                   className={`exercise-card ${
                     isErrorComponent ? 'exercise-card-error' : ''
                   } ${
@@ -301,18 +322,17 @@ export default function ExerciseSuggestionsDisplay({
                       </div>
                     )}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
 
           <div className="text-center text-sm text-gray-600 mb-8">
             <p>All suggestions are based on current evidence-based practices in physical therapy.</p>
             <p className="mt-1">For personalized medical advice, please consult with your healthcare provider.</p>
           </div>
         </div>
-      </div>
-      <Footer />
+      </motion.div>
     </div>
   );
 } 
