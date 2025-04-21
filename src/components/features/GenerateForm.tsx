@@ -117,4 +117,7 @@ export default function GenerateForm({ onSubmit, isLoading }: GenerateFormProps)
             )}
           </button>
         </div>
- 
+      </form>
+    </div>
+  );
+} 
