@@ -166,3 +166,25 @@ See [CHANGELOG.md](./CHANGELOG.md) for version history.
 ## License
 
 MIT
+
+## Security Features
+
+HEP Companion includes robust security features to protect user data and maintain privacy:
+
+- **Authentication**: All data access requires user authentication
+- **Row-Level Security (RLS)**: Users can only access their own data
+- **Audit Logging**: Complete audit trail of user actions
+- **Patient Data Protection**: SHA-256 hashing of patient identifiers
+- **Content Security Policy**: Protection against XSS attacks
+- **HSTS**: Enforces secure HTTPS connections
+
+### Security Setup
+
+To enable security features:
+
+```bash
+# Run the security setup script
+node scripts/deploy-security.js
+```
+
+See [Security Documentation](./docs/security/README.md) for more details.

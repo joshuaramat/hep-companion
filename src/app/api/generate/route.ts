@@ -6,6 +6,10 @@ import { retryWithExponentialBackoff, OpenAIAPIError } from '@/utils/retry';
 import { z } from 'zod';
 import { validateClinicalInput } from '@/services/utils/validation';
 import { logger } from '../../../utils/logger';
+import { createClient } from '@/services/supabase/server';
+import { cookies } from 'next/headers';
+import { generatePatientKey } from '@/utils/patient-key';
+import { logAudit } from '@/services/audit';
 
 // Max attempts for GPT parsing/validation
 const MAX_PROCESSING_ATTEMPTS = 2;
@@ -62,7 +66,9 @@ const requestSchema = z.object({
       return true;
     }, {
       message: 'Your input does not contain sufficient clinical information'
-    })
+    }),
+  mrn: z.string().optional(), // Optional for now, but will be required in the future
+  clinic_id: z.string().optional() // Optional for now, but will be required in the future
 });
 
 // Helper to clean and parse GPT responses
@@ -104,6 +110,19 @@ function cleanAndParseGPTResponse(rawResponse: string | null): unknown {
 
 export async function POST(request: Request) {
   try {
+    // Check authentication
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      logger.warn('Unauthenticated access attempt to generate API');
+      return NextResponse.json({ 
+        error: 'Authentication required', 
+        code: 'AUTHENTICATION_ERROR' 
+      }, { status: 401 });
+    }
+    
     // Parse and validate the request body
     const body = await request.json().catch(() => {
       throw new Error('Invalid JSON in request body');
@@ -134,7 +153,13 @@ export async function POST(request: Request) {
       );
     }
     
-    const { prompt } = body;
+    const { prompt, mrn, clinic_id } = body;
+    
+    // Generate patient key if MRN and clinic_id are provided
+    let patientKey: string | undefined;
+    if (mrn && clinic_id) {
+      patientKey = generatePatientKey(mrn, clinic_id);
+    }
     
     // Track attempts to process GPT response
     let attemptCount = 0;
@@ -198,6 +223,30 @@ export async function POST(request: Request) {
         const suggestionId = nanoid(8);
         
         logger.info(`Successfully processed suggestions: ${suggestionId}`);
+        
+        // Store the result in the database with user_id and patient_key
+        const { data: promptData, error: insertError } = await supabase
+          .from('prompts')
+          .insert({
+            id: suggestionId,
+            prompt_text: prompt,
+            raw_gpt_output: suggestionsWithIds,
+            user_id: user.id,
+            patient_key: patientKey
+          })
+          .select()
+          .single();
+          
+        if (insertError) {
+          logger.error(`Error inserting prompt data: ${insertError.message}`);
+          throw new Error(`Failed to store suggestions: ${insertError.message}`);
+        }
+        
+        // Log audit event
+        await logAudit('generate', 'prompt', suggestionId, {
+          has_patient_key: !!patientKey,
+          suggestions_count: suggestionsWithIds.length
+        });
 
         return NextResponse.json({ 
           id: suggestionId,
