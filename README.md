@@ -166,3 +166,50 @@ See [CHANGELOG.md](./CHANGELOG.md) for version history.
 ## License
 
 MIT
+
+## Security Features
+
+HEP Companion includes robust security features to protect user data and maintain privacy:
+
+- **Authentication**: Multiple authentication options including email/password, magic link, and Google OAuth
+- **Row-Level Security (RLS)**: Users can only access their own data
+- **Audit Logging**: Complete audit trail of user actions
+- **Patient Data Protection**: SHA-256 hashing of patient identifiers
+- **Content Security Policy**: Protection against XSS attacks
+- **HSTS**: Enforces secure HTTPS connections
+- **Idle Session Timeout**: Automatic logout after 15 minutes of inactivity
+- **Encryption**: Data is encrypted at rest and in transit using Supabase security features
+
+### Emergency Access Procedure
+
+The HEP Companion application includes an Emergency Access feature that allows authorized personnel to access critical patient data in emergency situations when normal authentication methods may not be available or when immediate access is required.
+
+This procedure should only be used in genuine emergency situations where:
+1. A patient's health and safety is at immediate risk
+2. Normal access methods are unavailable
+3. The information is needed to provide critical care
+
+#### Implementation Plan (To Be Developed)
+
+- **Authentication Override**: Special emergency credentials for authorized clinical staff
+- **Audit Trail**: All emergency access events are logged with detailed information
+- **Post-Access Review**: All emergency access events require justification and review
+- **Limited Duration**: Emergency access is time-limited and automatically expires
+- **Restricted Scope**: Emergency access provides only the minimum necessary information
+
+#### For Emergency Access
+
+For security reasons, the actual implementation details of the emergency access procedure are not included in this public repository. Authorized personnel should contact the security administrator for the specific emergency access protocol.
+
+> **Note**: This emergency access protocol must be used only in accordance with organizational policies, HIPAA regulations, and with proper documentation.
+
+### Security Setup
+
+To enable security features:
+
+```bash
+# Run the security setup script
+node scripts/deploy-security.js
+```
+
+See [Security Documentation](./docs/security/README.md) for more details.

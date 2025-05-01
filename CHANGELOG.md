@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Row-Level Security (RLS) policies for all database tables
+- Audit logging system with automatic triggers
+- 90-day purge job for audit logs
+- Patient key hashing for MRN and clinic ID
+- Security documentation in SECURITY-IMPLEMENTATION.md
+
+### Changed
+- Organized security migrations in scripts/migrations directory
+- Applied security changes directly through Supabase dashboard
+- Updated documentation to reflect implemented security features
+
 ## [0.2.0] - 2025-04-19
 
 ### Added
