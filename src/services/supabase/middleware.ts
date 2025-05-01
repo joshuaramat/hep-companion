@@ -35,10 +35,7 @@ export const createClient = (request: NextRequest) => {
           });
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.delete({
-            name,
-            ...options,
-          });
+          request.cookies.delete(name);
           response = NextResponse.next({
             request: {
               headers: request.headers,
