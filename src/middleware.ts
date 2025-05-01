@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { createClient } from '@/services/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
-  // Create supabase client response
+  // Create a response object
   const response = NextResponse.next();
   
   // Add security headers in production only
@@ -35,35 +35,42 @@ export async function middleware(request: NextRequest) {
   // Check for auth routes that don't require authentication
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth');
   const isApiRoute = request.nextUrl.pathname.startsWith('/api');
+  const isPublicAsset = request.nextUrl.pathname.match(/\.(ico|svg|png|jpg|jpeg|css|js)$/);
   
-  // For API routes, let the API handlers check authentication
-  if (isApiRoute) {
+  // Skip authentication for public assets and API routes
+  if (isApiRoute || isPublicAsset) {
+    return response;
+  }
+  
+  // Skip authentication check for auth routes
+  if (isAuthRoute) {
     return response;
   }
   
   // Handle authentication for client-side routes
-  const supabase = createClient(request);
-  
-  // Exclude auth routes from authentication check
-  if (!isAuthRoute) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+  try {
+    const supabase = createClient(request);
+    const { data: { session } } = await supabase.auth.getSession();
     
-    // If user is not authenticated and not on an auth route, redirect to login
+    // If user is not authenticated, redirect to login
     if (!session) {
       const redirectUrl = new URL('/auth/login', request.url);
       redirectUrl.searchParams.set('redirectUrl', request.nextUrl.pathname);
       return NextResponse.redirect(redirectUrl);
     }
+    
+    return response;
+  } catch (error) {
+    console.error('Middleware authentication error:', error);
+    // If there's an error checking authentication, redirect to login as a fallback
+    const redirectUrl = new URL('/auth/login', request.url);
+    return NextResponse.redirect(redirectUrl);
   }
-  
-  return response;
 }
 
 export const config = {
   matcher: [
     // Add routes that should check auth and add security headers
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.ico|.*\\.svg).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 }; 
