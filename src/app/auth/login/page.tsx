@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/services/supabase/client';
 
@@ -14,6 +14,14 @@ export default function LoginPage() {
   const redirectUrl = searchParams.get('redirectUrl') || '/';
   
   const supabase = createClient();
+  
+  // Check for error parameter in URL
+  useEffect(() => {
+    const errorMsg = searchParams.get('error');
+    if (errorMsg) {
+      setError(`Authentication error: ${errorMsg}`);
+    }
+  }, [searchParams]);
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +56,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: window.location.origin + redirectUrl,
+          emailRedirectTo: window.location.origin + '/auth/callback?redirectUrl=' + encodeURIComponent(redirectUrl),
         },
       });
       
@@ -72,7 +80,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + redirectUrl,
+          redirectTo: window.location.origin + '/auth/callback?redirectUrl=' + encodeURIComponent(redirectUrl),
         },
       });
       
