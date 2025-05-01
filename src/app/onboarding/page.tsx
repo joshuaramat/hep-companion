@@ -3,6 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/services/supabase/client';
+import OrganizationSelector from '@/components/features/OrganizationSelector';
+
+type Organization = {
+  id: string;
+  name: string;
+  clinic_id: string;
+};
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -10,6 +17,7 @@ export default function OnboardingPage() {
   const [clinicId, setClinicId] = useState('');
   const [profession, setProfession] = useState('physical_therapist');
   const [organization, setOrganization] = useState('');
+  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -40,26 +48,132 @@ export default function OnboardingPage() {
       if (profile?.onboarding_completed) {
         // User has already completed onboarding
         router.push('/');
+        return;
       }
       
       // Pre-fill name from auth data if available
       if (session.user.user_metadata?.full_name) {
         setFullName(session.user.user_metadata.full_name);
       }
+      
+      // If they have already started but not completed onboarding, restore their data
+      if (profile) {
+        if (profile.full_name) setFullName(profile.full_name);
+        if (profile.profession) setProfession(profile.profession);
+        if (profile.clinic_id) setClinicId(profile.clinic_id);
+        if (profile.organization) setOrganization(profile.organization);
+        
+        // If they have organization information, consider step 1 complete
+        if (profile.full_name && profile.profession) {
+          // Set the correct step based on their progress
+          if (profile.clinic_id && profile.organization) {
+            setStep(3); // They have completed org selection, go to final step
+          } else {
+            setStep(2); // They have completed profile but need to select org
+          }
+        }
+      }
     };
     
     checkUser();
   }, [router]);
   
+  const handleOrgSelect = (org: Organization) => {
+    setSelectedOrg(org);
+    setOrganization(org.name);
+    setClinicId(org.clinic_id);
+    
+    // Save the organization selection immediately
+    updateUserProfile({
+      clinic_id: org.clinic_id,
+      organization: org.name
+    });
+    
+    // Move to the next step automatically
+    setStep(3);
+  };
+  
+  const handleCreateOrg = async (name: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/organizations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name }),
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create organization');
+      }
+      
+      const { data: org } = await response.json();
+      
+      setSelectedOrg({
+        id: org.id,
+        name: org.name,
+        clinic_id: org.clinic_id
+      });
+      setOrganization(org.name);
+      setClinicId(org.clinic_id);
+      
+      // Save the organization selection immediately
+      await updateUserProfile({
+        clinic_id: org.clinic_id,
+        organization: org.name
+      });
+      
+      // Move to the next step automatically
+      setStep(3);
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create organization');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Helper function to update user profile incrementally
+  const updateUserProfile = async (data: Record<string, any>) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          ...data,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Failed to update profile:', error);
+      // Don't show this error to the user, just log it
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (step < 3) {
+      // Save data for the current step before advancing
+      if (step === 1) {
+        await updateUserProfile({
+          full_name: fullName,
+          profession
+        });
+      }
+      
       setStep(step + 1);
       return;
     }
     
-    // Final step - save all data
+    // Final step - save all data and mark onboarding as complete
     setLoading(true);
     setError(null);
     
@@ -174,38 +288,11 @@ export default function OnboardingPage() {
           
           {/* Step 2: Practice Information */}
           {step === 2 && (
-            <>
-              <div>
-                <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-1">
-                  Organization / Hospital / Clinic Name
-                </label>
-                <input
-                  id="organization"
-                  type="text"
-                  value={organization}
-                  onChange={(e) => setOrganization(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Where do you practice?"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="clinicId" className="block text-sm font-medium text-gray-700 mb-1">
-                  Clinic ID
-                </label>
-                <input
-                  id="clinicId"
-                  type="text"
-                  value={clinicId}
-                  onChange={(e) => setClinicId(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Your clinic identifier"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Your organization's unique identifier used for patient records
-                </p>
-              </div>
-            </>
+            <OrganizationSelector 
+              onSelect={handleOrgSelect}
+              onCreateNew={handleCreateOrg}
+              defaultName={organization}
+            />
           )}
           
           {/* Step 3: Confirmation */}
@@ -251,10 +338,10 @@ export default function OnboardingPage() {
             
             <button
               type="submit"
-              disabled={loading}
-              className={`${step < 3 ? 'bg-indigo-600' : 'bg-green-600'} text-white px-6 py-2 rounded-md hover:${step < 3 ? 'bg-indigo-700' : 'bg-green-700'} ml-auto`}
+              disabled={loading || (step === 2 && !selectedOrg && !organization)}
+              className={`${step < 3 ? 'bg-indigo-600' : 'bg-green-600'} text-white px-6 py-2 rounded-md hover:${step < 3 ? 'bg-indigo-700' : 'bg-green-700'} ml-auto ${(loading || (step === 2 && !selectedOrg && !organization)) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {loading ? 'Saving...' : 
+              {loading ? 'Loading...' : 
                step < 3 ? 'Continue' : 
                'Complete Setup'}
             </button>

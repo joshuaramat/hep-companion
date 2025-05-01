@@ -161,7 +161,7 @@ src/
 4. Run the full test suite before submitting PRs
 5. Update documentation as needed
 
-See [CHANGELOG.md](./CHANGELOG.md) for version history.
+See [Development Changelog](./docs/development/CHANGELOG.md) for version history.
 
 ## License
 
@@ -209,7 +209,18 @@ To enable security features:
 
 ```bash
 # Run the security setup script
-node scripts/deploy-security.js
+npm run deploy-security
 ```
 
 See [Security Documentation](./docs/security/README.md) for more details.
+
+## Documentation
+
+Comprehensive documentation is available in the `docs` directory:
+
+- [User Documentation](./docs/user/) - Onboarding and usage guides
+- [Security Documentation](./docs/security/) - Security features and implementation
+- [Development Documentation](./docs/development/) - Changelog and development guides
+- [Scripts Documentation](./scripts/README.md) - Utility scripts for development and deployment
+
+See the [Documentation Index](./docs/README.md) for a complete list of available documentation.

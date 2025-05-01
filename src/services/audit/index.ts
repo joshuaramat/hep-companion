@@ -1,8 +1,8 @@
 import { createClient } from '@/services/supabase/server';
 import { cookies } from 'next/headers';
 
-export type AuditAction = 'create' | 'update' | 'delete' | 'generate' | 'feedback';
-export type ResourceType = 'prompt' | 'suggestion' | 'feedback' | 'citation';
+export type AuditAction = 'create' | 'update' | 'delete' | 'generate' | 'feedback' | 'select';
+export type ResourceType = 'prompt' | 'suggestion' | 'feedback' | 'citation' | 'organization';
 
 /**
  * Log an audit event for user actions
