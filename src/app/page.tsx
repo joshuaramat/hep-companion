@@ -1,31 +1,55 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingSuggestions from '@/components/features/LoadingSuggestions';
+import { createClient } from '@/services/supabase/client';
 
 export default function HomePage() {
   const router = useRouter();
   const [prompt, setPrompt] = useState('');
+  const [mrn, setMrn] = useState('');
+  const [clinicId, setClinicId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const isSubmitting = useRef(false);
+  const supabase = createClient();
+
+  // Check if user is authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      
+      if (!session) {
+        router.push('/auth/login?redirectUrl=/');
+      }
+    };
+    
+    checkAuth();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt.trim() || isSubmitting.current) return;
+    if (!prompt.trim() || isSubmitting.current || !isAuthenticated) return;
 
     isSubmitting.current = true;
     setIsLoading(true);
     setError(null);
 
     try {
+      // Include MRN and clinic ID if provided
+      const requestBody: any = { prompt };
+      if (mrn) requestBody.mrn = mrn;
+      if (clinicId) requestBody.clinic_id = clinicId;
+
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -48,6 +72,10 @@ export default function HomePage() {
       isSubmitting.current = false;
     }
   };
+
+  if (!isAuthenticated) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -85,6 +113,7 @@ export default function HomePage() {
           }`}
         >
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Clinical Scenario */}
             <div>
               <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
                 Clinical Scenario or Exercise Needs
@@ -98,6 +127,40 @@ export default function HomePage() {
                 placeholder="e.g., Patient presents with chronic lower back pain and limited mobility. Looking for exercises to improve core strength and flexibility..."
                 disabled={isLoading}
               />
+            </div>
+            
+            {/* Patient Identification (for SHA-256 hashing) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="mrn" className="block text-sm font-medium text-gray-700 mb-2">
+                  Patient MRN (optional)
+                </label>
+                <input
+                  id="mrn"
+                  type="text"
+                  value={mrn}
+                  onChange={(e) => setMrn(e.target.value)}
+                  className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Medical Record Number"
+                  disabled={isLoading}
+                />
+                <p className="text-xs text-gray-500 mt-1">This will be securely hashed, not stored directly</p>
+              </div>
+              
+              <div>
+                <label htmlFor="clinicId" className="block text-sm font-medium text-gray-700 mb-2">
+                  Clinic ID (optional)
+                </label>
+                <input
+                  id="clinicId"
+                  type="text"
+                  value={clinicId}
+                  onChange={(e) => setClinicId(e.target.value)}
+                  className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Your clinic identifier"
+                  disabled={isLoading}
+                />
+              </div>
             </div>
 
             {!isLoading && (
