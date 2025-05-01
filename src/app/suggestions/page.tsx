@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ExerciseSuggestion } from '@/types';
 import ExerciseSuggestionsDisplay from '@/components/features/ExerciseSuggestionsDisplay';
+import { createClient } from '@/services/supabase/client';
 
 export default function SuggestionsPage() {
   const router = useRouter();
@@ -15,11 +16,29 @@ export default function SuggestionsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Record<string, { score: number; comment?: string }>>({});
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const isSubmittingRef = useRef(false);
+  const supabase = createClient();
 
-  if (!id || !prompt || !suggestionsParam) {
-    router.push('/');
-    return null;
+  // Check if user is authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      
+      if (!session) {
+        // If not authenticated, redirect to login
+        const currentUrl = window.location.pathname + window.location.search;
+        router.push(`/auth/login?redirectUrl=${encodeURIComponent(currentUrl)}`);
+      }
+    };
+    
+    checkAuth();
+  }, []);
+
+  if (!id || !prompt || !suggestionsParam || !isAuthenticated) {
+    // Show loading or redirect
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
   const suggestions: ExerciseSuggestion[] = JSON.parse(decodeURIComponent(suggestionsParam));
@@ -52,7 +71,34 @@ export default function SuggestionsPage() {
         throw new Error('Please rate all exercises before submitting');
       }
 
-      // Here you would typically send the feedback to your backend
+      // Submit feedback for each suggestion using the new API
+      const feedbackPromises = suggestionIds.map(suggestionId => {
+        const fb = feedback[suggestionId];
+        
+        return fetch('/api/feedback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt_id: id,
+            suggestion_id: suggestionId,
+            relevance_score: fb.score,
+            comment: fb.comment
+          }),
+        }).then(res => {
+          if (!res.ok) {
+            return res.json().then(err => {
+              throw new Error(err.error || 'Failed to submit feedback');
+            });
+          }
+          return res.json();
+        });
+      });
+      
+      await Promise.all(feedbackPromises);
+      
+      // Redirect to success page
       router.push('/success');
     } catch (error) {
       console.error('Error submitting feedback:', error);
