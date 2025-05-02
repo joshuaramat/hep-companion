@@ -81,7 +81,6 @@ describe('SessionProvider Component', () => {
         </SessionProvider>
       );
     });
-    
     // Wait for session check to complete
     await waitFor(() => {
       expect(rendered.getByTestId('test-child')).toBeInTheDocument();

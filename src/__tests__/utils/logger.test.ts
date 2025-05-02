@@ -1,8 +1,13 @@
 import { logger } from '@/utils/logger';
 
 describe('Logger Utility', () => {
+  let originalNodeEnv: string | undefined;
+  
   beforeEach(() => {
-    // Save original console methods
+    // Save original NODE_ENV value
+    originalNodeEnv = process.env.NODE_ENV;
+    
+    // Mock console methods
     jest.spyOn(console, 'info').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -10,46 +15,47 @@ describe('Logger Utility', () => {
   });
 
   afterEach(() => {
+    // Restore console mocks
     jest.restoreAllMocks();
+    
+    // Restore the environment variable
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: originalNodeEnv,
+      configurable: true
+    });
   });
 
   describe('info method', () => {
     it('should log info messages with proper format', () => {
-      // Save the original NODE_ENV
-      const originalNodeEnv = process.env.NODE_ENV;
-      
-      // Set to non-test environment to allow logging
-      process.env.NODE_ENV = 'development';
+      // Mock environment for this test
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        configurable: true
+      });
       
       logger.info('Test info message');
       
       expect(console.info).toHaveBeenCalledWith('[INFO] Test info message');
-      
-      // Restore NODE_ENV
-      process.env.NODE_ENV = originalNodeEnv;
     });
 
     it('should not log in test environment', () => {
-      // Save the original NODE_ENV
-      const originalNodeEnv = process.env.NODE_ENV;
-      
-      // Set to test environment
-      process.env.NODE_ENV = 'test';
+      // Mock environment for this test
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'test',
+        configurable: true
+      });
       
       logger.info('Test info message');
       
       expect(console.info).not.toHaveBeenCalled();
-      
-      // Restore NODE_ENV
-      process.env.NODE_ENV = originalNodeEnv;
     });
 
     it('should include additional arguments', () => {
-      // Save the original NODE_ENV
-      const originalNodeEnv = process.env.NODE_ENV;
-      
-      // Set to non-test environment
-      process.env.NODE_ENV = 'development';
+      // Mock environment for this test
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        configurable: true
+      });
       
       const additionalData = { user: 'test', action: 'login' };
       logger.info('User login', additionalData);
@@ -58,120 +64,96 @@ describe('Logger Utility', () => {
         '[INFO] User login', 
         additionalData
       );
-      
-      // Restore NODE_ENV
-      process.env.NODE_ENV = originalNodeEnv;
     });
   });
 
   describe('warn method', () => {
     it('should log warning messages with proper format', () => {
-      // Save the original NODE_ENV
-      const originalNodeEnv = process.env.NODE_ENV;
-      
-      // Set to non-test environment
-      process.env.NODE_ENV = 'development';
+      // Mock environment for this test
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        configurable: true
+      });
       
       logger.warn('Test warning message');
       
       expect(console.warn).toHaveBeenCalledWith('[WARN] Test warning message');
-      
-      // Restore NODE_ENV
-      process.env.NODE_ENV = originalNodeEnv;
     });
 
     it('should not log in test environment', () => {
-      // Save the original NODE_ENV
-      const originalNodeEnv = process.env.NODE_ENV;
-      
-      // Set to test environment
-      process.env.NODE_ENV = 'test';
+      // Mock environment for this test
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'test',
+        configurable: true
+      });
       
       logger.warn('Test warning message');
       
       expect(console.warn).not.toHaveBeenCalled();
-      
-      // Restore NODE_ENV
-      process.env.NODE_ENV = originalNodeEnv;
     });
   });
 
   describe('error method', () => {
     it('should log error messages with proper format', () => {
-      // Save the original NODE_ENV
-      const originalNodeEnv = process.env.NODE_ENV;
-      
-      // Set to non-test environment
-      process.env.NODE_ENV = 'development';
+      // Mock environment for this test
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        configurable: true
+      });
       
       logger.error('Test error message');
       
       expect(console.error).toHaveBeenCalledWith('[ERROR] Test error message');
-      
-      // Restore NODE_ENV
-      process.env.NODE_ENV = originalNodeEnv;
     });
 
     it('should not log in test environment', () => {
-      // Save the original NODE_ENV
-      const originalNodeEnv = process.env.NODE_ENV;
-      
-      // Set to test environment
-      process.env.NODE_ENV = 'test';
+      // Mock environment for this test
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'test',
+        configurable: true
+      });
       
       logger.error('Test error message');
       
       expect(console.error).not.toHaveBeenCalled();
-      
-      // Restore NODE_ENV
-      process.env.NODE_ENV = originalNodeEnv;
     });
   });
 
   describe('debug method', () => {
     it('should log debug messages in development environment', () => {
-      // Save the original NODE_ENV
-      const originalNodeEnv = process.env.NODE_ENV;
-      
-      // Set to development environment
-      process.env.NODE_ENV = 'development';
+      // Mock environment for this test
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        configurable: true
+      });
       
       logger.debug('Test debug message');
       
       expect(console.debug).toHaveBeenCalledWith('[DEBUG] Test debug message');
-      
-      // Restore NODE_ENV
-      process.env.NODE_ENV = originalNodeEnv;
     });
 
     it('should not log debug messages in production environment', () => {
-      // Save the original NODE_ENV
-      const originalNodeEnv = process.env.NODE_ENV;
-      
-      // Set to production environment
-      process.env.NODE_ENV = 'production';
+      // Mock environment for this test
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'production',
+        configurable: true
+      });
       
       logger.debug('Test debug message');
       
       expect(console.debug).not.toHaveBeenCalled();
-      
-      // Restore NODE_ENV
-      process.env.NODE_ENV = originalNodeEnv;
     });
 
     it('should not log debug messages in test environment', () => {
-      // Save the original NODE_ENV
-      const originalNodeEnv = process.env.NODE_ENV;
-      
-      // Set to test environment
-      process.env.NODE_ENV = 'test';
+      // Mock environment for this test
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'test',
+        configurable: true
+      });
       
       logger.debug('Test debug message');
       
       expect(console.debug).not.toHaveBeenCalled();
-      
-      // Restore NODE_ENV
-      process.env.NODE_ENV = originalNodeEnv;
     });
   });
 }); 
