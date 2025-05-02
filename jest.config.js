@@ -49,7 +49,10 @@ const config = {
   ],
   
   // Setup files after environment is set up
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  setupFilesAfterEnv: [
+    '<rootDir>/jest.setup.js',
+    '<rootDir>/jest.setup.mocks.js'
+  ],
   
   // Allow using ES modules in tests
   extensionsToTreatAsEsm: ['.ts', '.tsx'],

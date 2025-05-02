@@ -21,7 +21,7 @@ jest.mock('next/headers', () => ({
 
 // We will extract these mock functions for use in tests
 let mockJson: jest.Mock;
-let mockGetUser: jest.Mock;
+let mockSearchGetUser: jest.Mock;
 let mockRpc: jest.Mock;
 
 // Mock Supabase service
@@ -35,7 +35,7 @@ jest.mock('@/services/supabase/server', () => {
     error: null
   });
   
-  mockGetUser = jest.fn().mockResolvedValue({
+  mockSearchGetUser = jest.fn().mockResolvedValue({
     data: { user: { id: 'test-user-id' } },
     error: null
   });
@@ -44,7 +44,7 @@ jest.mock('@/services/supabase/server', () => {
     createClient: jest.fn().mockReturnValue({
       rpc: mockRpc,
       auth: {
-        getUser: mockGetUser
+        getUser: mockSearchGetUser
       }
     })
   };
@@ -69,7 +69,7 @@ describe('Organizations Search API Route Handler', () => {
     jest.clearAllMocks();
     
     // Reset mocks to their default success state
-    mockGetUser.mockResolvedValue({
+    mockSearchGetUser.mockResolvedValue({
       data: { user: { id: 'test-user-id' } },
       error: null
     });
@@ -85,7 +85,7 @@ describe('Organizations Search API Route Handler', () => {
   });
   
   it('should return 401 when user is not authenticated', async () => {
-    mockGetUser.mockResolvedValue({
+    mockSearchGetUser.mockResolvedValue({
       data: { user: null },
       error: { message: 'User not authenticated' }
     });

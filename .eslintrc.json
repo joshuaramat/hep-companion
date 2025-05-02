@@ -1,0 +1,22 @@
+{
+  "extends": ["next/core-web-vitals", "eslint:recommended"],
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-console": ["warn", { "allow": ["warn", "error"] }]
+  },
+  "overrides": [
+    {
+      "files": ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
+      "env": {
+        "jest": true
+      },
+      "globals": {
+        "fail": "readonly"
+      },
+      "rules": {
+        // Relaxed rules for test files
+        "no-console": "off"
+      }
+    }
+  ]
+} 

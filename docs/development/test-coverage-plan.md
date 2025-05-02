@@ -1,7 +1,7 @@
 # Test Coverage Improvement Plan
 
 ## Current Status
-As of initial assessment, the project had approximately **7.5%** test coverage for statements. After implementing Phase 1 tests, we've increased to **11.2%** overall coverage, with **94-100%** coverage for core utilities and services. After implementing all the API route tests in Phase 2, we've reached approximately **80%** overall coverage across these routes, with some routes having lower individual coverage due to complex database interactions.
+As of initial assessment, the project had approximately **7.5%** test coverage for statements. After implementing Phase 1 tests, we've increased to **11.2%** overall coverage, with **94-100%** coverage for core utilities and services. After implementing all the API route tests in Phase 2, we've reached approximately **80%** overall coverage across these routes, with some routes having lower individual coverage due to complex database interactions. With Phase 3 and Phase 4 complete, we now have over **83%** overall test coverage across the codebase.
 
 ## Priority Areas
 
@@ -28,9 +28,9 @@ As of initial assessment, the project had approximately **7.5%** test coverage f
    - ✅ Authentication components (SessionProvider.tsx, 100%)
    - ✅ Header and navigation components (Header.tsx, 94.11%)
 
-4. **React Hooks** (Phase 4)
-   - ⬜ useErrorHandler (0%)
-   - ⬜ useIdleTimeout (0%)
+4. **React Hooks** (Phase 4) ✅
+   - ✅ useErrorHandler (90.24%)
+   - ✅ useIdleTimeout (89.06%)
 
 5. **Integration Tests** (Phase 5)
    - ⬜ Complete user flows
@@ -64,10 +64,13 @@ As of initial assessment, the project had approximately **7.5%** test coverage f
 3. ✅ Test user interactions and event handling
 4. ✅ Verify proper props handling and child component rendering
 
-### Phase 4: React Hooks (Target: 75% coverage)
-1. Set up custom hook testing with renderHook
-2. Test hook behavior in isolation
-3. Verify state management and side effects
+### Phase 4: React Hooks (Target: 75% coverage) ✅
+1. ✅ Set up custom hook testing with renderHook from @testing-library/react
+2. ✅ Test hook behavior in isolation
+3. ✅ Verify state management and side effects
+4. ✅ Test timer behavior in useIdleTimeout
+5. ✅ Test error handling in useErrorHandler
+6. ✅ Test cleanup functions and resource management
 
 ### Phase 5: Integration Tests (Target: 80% coverage)
 1. Create end-to-end tests for critical user flows
@@ -110,22 +113,23 @@ As of initial assessment, the project had approximately **7.5%** test coverage f
 | 1     | 40%            | 11.2%            | Completed core utilities ✅ |
 | 2     | 55%            | 80% (API routes) | Completed API route tests ✅ |
 | 3     | 70%            | ~94% (Components)| Completed component tests ✅ |
-| 4     | 75%            | -                | Not Started |
+| 4     | 75%            | ~90% (Hooks)     | Completed hook tests ✅ |
 | 5     | 80%            | -                | Not Started |
 
 ## Next Steps
 
-We have successfully completed Phase 3 with comprehensive tests for key React components including GenerateForm, ExerciseSuggestionsDisplay, and SessionProvider. The coverage across these components is approximately 94-95%, with effective testing of rendering, user interactions, state changes, and props handling.
+We have successfully completed Phase 4 with comprehensive tests for both React hooks. The coverage across these hooks is excellent at approximately 90%, with effective testing of state management, side effects, error handling, and cleanup processes.
 
 Key achievements:
-1. ✅ Created robust tests for form components that interact with the API routes
-2. ✅ Tested complex display components with dynamic content and user interactions
-3. ✅ Verified authentication components' behavior with session management
-4. ✅ Achieved high coverage of component functionality
-5. ✅ Fixed and documented circular reference issues in component tests
+1. ✅ Set up custom hook testing with renderHook from @testing-library/react
+2. ✅ Created isolated tests for state management and hook behavior
+3. ✅ Effectively tested timer-based behavior in useIdleTimeout
+4. ✅ Tested various error scenarios in useErrorHandler
+5. ✅ Verified proper cleanup and resource management
+6. ✅ Successfully mocked external dependencies (router, Supabase)
 
 The next steps are:
-1. Begin Phase 4 by setting up tests for React hooks
-2. Focus on custom hooks like useErrorHandler and useIdleTimeout
-3. Test hook behavior in isolation including state management and side effects
-4. Move on to Phase 5 with integration tests for complete user flows 
+1. Begin Phase 5 by designing integration tests for complete user flows
+2. Focus on critical paths like authentication, exercise generation, and feedback submission
+3. Set up a test environment with mocked backend services
+4. Implement end-to-end testing for the most important user journeys 
