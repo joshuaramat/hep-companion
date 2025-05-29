@@ -1,3 +1,6 @@
+// Exercise types
+export * from './exercise';
+
 export interface ExerciseSuggestion {
   id: string;
   exercise_name: string;
