@@ -33,7 +33,7 @@ console.log('------------------------------------------');
 
 // Check NEXT_PUBLIC_SUPABASE_URL
 const hasUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
-console.log(`NEXT_PUBLIC_SUPABASE_URL: ${hasUrl ? '✅ Found' : '❌ Missing'}`);
+console.log(`NEXT_PUBLIC_SUPABASE_URL: ${hasUrl ? 'Found' : 'Missing'}`);
 if (hasUrl) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   console.log(`  Value: ${url.substring(0, 8)}...${url.substring(url.length - 5)}`);
@@ -41,7 +41,7 @@ if (hasUrl) {
 
 // Check SUPABASE_SERVICE_ROLE_KEY
 const hasKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-console.log(`SUPABASE_SERVICE_ROLE_KEY: ${hasKey ? '✅ Found' : '❌ Missing'}`);
+console.log(`SUPABASE_SERVICE_ROLE_KEY: ${hasKey ? 'Found' : 'Missing'}`);
 if (hasKey) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   console.log(`  Value: ${key.substring(0, 3)}...${key.substring(key.length - 3)}`);
@@ -75,7 +75,7 @@ try {
 console.log('\nEnvironment files in project root:');
 ['.env', '.env.local', '.env.development', '.env.production'].forEach(file => {
   const exists = fs.existsSync(path.resolve(process.cwd(), file));
-  console.log(`- ${file}: ${exists ? '✅ Found' : '❌ Not found'}`);
+  console.log(`- ${file}: ${exists ? 'Found' : 'Not found'}`);
 });
 
 console.log('\nIf your variables are missing, make sure they are correctly defined in your .env.local file');

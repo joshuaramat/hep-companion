@@ -4,6 +4,18 @@ import { createClient } from '@/services/supabase/server';
 import { cookies } from 'next/headers';
 import { logAudit } from '@/services/audit';
 import { logger } from '@/utils/logger';
+import {
+  createSuccessResponse,
+  createAuthErrorResponse,
+  createValidationErrorResponse,
+  createNotFoundResponse,
+  createAuthzErrorResponse,
+  createServerErrorResponse,
+  withErrorHandling
+} from '@/utils/api-response';
+
+// Validate environment variables
+import '@/config/env';
 
 // Schema validation for feedback
 const feedbackSchema = z.object({
@@ -13,122 +25,91 @@ const feedbackSchema = z.object({
   comment: z.string().optional()
 });
 
-export async function POST(request: Request) {
+async function handleFeedback(request: Request) {
+  // Authentication check
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    logger.warn('Unauthenticated access attempt to feedback API');
+    return createAuthErrorResponse();
+  }
+  
+  // Parse and validate request
+  const body = await request.json().catch(() => {
+    throw new Error('Invalid JSON in request body');
+  });
+  
   try {
-    // Authentication check
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      logger.warn('Unauthenticated access attempt to feedback API');
-      return NextResponse.json({ 
-        error: 'Authentication required', 
-        code: 'AUTHENTICATION_ERROR' 
-      }, { status: 401 });
-    }
-    
-    // Parse and validate request
-    const body = await request.json().catch(() => {
-      throw new Error('Invalid JSON in request body');
-    });
-    
-    try {
-      feedbackSchema.parse(body);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errorDetail = error.errors[0];
-        return NextResponse.json(
-          { 
-            error: errorDetail.message,
-            code: 'VALIDATION_ERROR',
-            field: errorDetail.path.join('.')
-          },
-          { status: 400 }
-        );
-      }
-      
-      return NextResponse.json(
-        { 
-          error: error instanceof Error ? error.message : 'Invalid feedback format',
-          code: 'VALIDATION_ERROR' 
-        },
-        { status: 400 }
+    feedbackSchema.parse(body);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const errorDetail = error.errors[0];
+      return createValidationErrorResponse(
+        errorDetail.message,
+        errorDetail.path.join('.'),
+        error.errors
       );
     }
     
-    const { prompt_id, suggestion_id, relevance_score, comment } = body;
+    return createValidationErrorResponse(
+      error instanceof Error ? error.message : 'Invalid feedback format'
+    );
+  }
+  
+  const { prompt_id, suggestion_id, relevance_score, comment } = body;
+  
+  // Verify that the prompt belongs to the user
+  const { data: promptData, error: promptError } = await supabase
+    .from('prompts')
+    .select('id, user_id')
+    .eq('id', prompt_id)
+    .single();
     
-    // Verify that the prompt belongs to the user
-    const { data: promptData, error: promptError } = await supabase
-      .from('prompts')
-      .select('id, user_id')
-      .eq('id', prompt_id)
-      .single();
-      
-    if (promptError || !promptData) {
-      return NextResponse.json({ 
-        error: 'Prompt not found', 
-        code: 'RESOURCE_ERROR' 
-      }, { status: 404 });
-    }
-    
-    if (promptData.user_id !== user.id) {
-      logger.warn(`Unauthorized feedback attempt: User ${user.id} attempted to provide feedback for prompt ${prompt_id}`);
-      return NextResponse.json({ 
-        error: 'Unauthorized access to this prompt', 
-        code: 'AUTHORIZATION_ERROR' 
-      }, { status: 403 });
-    }
-    
-    // Save feedback
-    const { data: feedbackData, error: feedbackError } = await supabase
-      .from('feedback')
-      .insert({
-        prompt_id,
-        suggestion_id,
-        relevance_score,
-        comment,
-        user_id: user.id
-      })
-      .select()
-      .single();
-      
-    if (feedbackError) {
-      logger.error(`Error inserting feedback: ${feedbackError.message}`);
-      throw new Error(`Failed to save feedback: ${feedbackError.message}`);
-    }
-    
-    // Log audit
-    await logAudit('feedback', 'feedback', feedbackData.id, {
+  if (promptError || !promptData) {
+    return createNotFoundResponse('Prompt');
+  }
+  
+  if (promptData.user_id !== user.id) {
+    logger.warn(`Unauthorized feedback attempt: User ${user.id} attempted to provide feedback for prompt ${prompt_id}`);
+    return createAuthzErrorResponse('Unauthorized access to this prompt');
+  }
+  
+  // Save feedback
+  const { data: feedbackData, error: feedbackError } = await supabase
+    .from('feedback')
+    .insert({
       prompt_id,
       suggestion_id,
-      score: relevance_score
-    });
+      relevance_score,
+      comment,
+      user_id: user.id
+    })
+    .select()
+    .single();
     
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: feedbackData.id,
-        prompt_id,
-        suggestion_id,
-        relevance_score
-      }
-    });
-  } catch (error) {
-    logger.error('Feedback submission error:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ 
-        error: 'Validation error',
-        code: 'VALIDATION_ERROR',
-        details: error.errors 
-      }, { status: 400 });
-    }
-    
-    return NextResponse.json({ 
-      error: 'An error occurred while saving feedback',
-      code: 'UNEXPECTED_ERROR'
-    }, { status: 500 });
+  if (feedbackError) {
+    logger.error(`Error inserting feedback: ${feedbackError.message}`);
+    throw new Error(`Failed to save feedback: ${feedbackError.message}`);
   }
-} 
+  
+  // Log audit
+  await logAudit('feedback', 'feedback', feedbackData.id, {
+    prompt_id,
+    suggestion_id,
+    score: relevance_score
+  });
+  
+  return createSuccessResponse(
+    {
+      id: feedbackData.id,
+      prompt_id,
+      suggestion_id,
+      relevance_score
+    },
+    'Feedback submitted successfully'
+  );
+}
+
+export const POST = withErrorHandling(handleFeedback); 

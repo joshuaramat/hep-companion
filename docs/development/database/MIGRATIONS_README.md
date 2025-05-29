@@ -30,4 +30,4 @@ bash apply-migrations.sh
    - Created policies to ensure users can only access their own data
    - Blocked anonymous access to all data tables
 
-For more details, see the [SECURITY-IMPLEMENTATION.md](../../SECURITY-IMPLEMENTATION.md) file in the root directory. 
+For more details, see the [security-headers-implementation.md](../security/security-headers-implementation.md) file. 

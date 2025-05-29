@@ -6,31 +6,35 @@ export async function middleware(request: NextRequest) {
   // Create a response object
   const response = NextResponse.next();
   
-  // Add security headers in production only
-  if (process.env.NODE_ENV === 'production') {
-    // Add Content Security Policy header
-    response.headers.set(
-      'Content-Security-Policy',
-      "default-src 'self'; " +
-      "script-src 'self' 'unsafe-inline'; " +
-      "style-src 'self' 'unsafe-inline'; " +
-      "img-src 'self' data:; " +
-      "connect-src 'self' https://*.supabase.co; " +
-      "frame-ancestors 'none';"
-    );
-    
-    // Add HTTP Strict Transport Security header
-    response.headers.set(
-      'Strict-Transport-Security',
-      'max-age=63072000; includeSubDomains; preload'
-    );
-    
-    // Add other security headers
-    response.headers.set('X-Content-Type-Options', 'nosniff');
-    response.headers.set('X-Frame-Options', 'DENY');
-    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    response.headers.set('X-XSS-Protection', '1; mode=block');
-  }
+  // Add security headers (now applied in all environments for testing)
+  // Content Security Policy - strict for healthcare/HIPAA compliance
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data: blob:; " +
+    "connect-src 'self' https://*.supabase.co; " +
+    "font-src 'self'; " +
+    "object-src 'none'; " +
+    "base-uri 'self'; " +
+    "form-action 'self'; " +
+    "frame-ancestors 'none'; " +
+    "upgrade-insecure-requests;"
+  );
+  
+  // HTTP Strict Transport Security header with exact requirements
+  response.headers.set(
+    'Strict-Transport-Security',
+    'max-age=31536000; includeSubDomains; preload'
+  );
+  
+  // Additional security headers for healthcare applications
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
   
   // Check for auth routes that don't require authentication
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth');

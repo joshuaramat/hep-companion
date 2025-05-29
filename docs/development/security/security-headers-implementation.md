@@ -83,7 +83,7 @@ X-Content-Type-Options: nosniff
 - `src/middleware.ts` - Updated with comprehensive security headers
 - `tests/security-headers.test.ts` - Automated verification tests
 - `scripts/verify-headers.js` - Manual verification utility
-- `docs/development/security/security-implementation.md` - This documentation
+- `docs/development/security/security-headers-implementation.md` - This documentation
 
 ## Security Header Reference
 

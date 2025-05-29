@@ -5,6 +5,9 @@ import Footer from '@/components/layout/Footer'
 import { Suspense } from 'react'
 import ClientSessionProvider from '@/components/auth/ClientSessionProvider'
 
+// Validate environment variables on app startup
+import '@/config/env'
+
 export const metadata: Metadata = {
   title: 'HEP Companion - AI-Powered Exercise Suggestions',
   description: 'Generate personalized home exercise programs for physical therapy patients',

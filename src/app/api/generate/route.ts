@@ -10,6 +10,17 @@ import { createClient } from '@/services/supabase/server';
 import { cookies } from 'next/headers';
 import { generatePatientKey } from '@/utils/patient-key';
 import { logAudit } from '@/services/audit';
+import {
+  createSuccessResponse,
+  createAuthErrorResponse,
+  createValidationErrorResponse,
+  createServerErrorResponse,
+  createErrorResponse,
+  withErrorHandling
+} from '@/utils/api-response';
+
+// Validate environment variables
+import '@/config/env';
 
 // Max attempts for GPT parsing/validation
 const MAX_PROCESSING_ATTEMPTS = 2;
@@ -108,225 +119,197 @@ function cleanAndParseGPTResponse(rawResponse: string | null): unknown {
   }
 }
 
-export async function POST(request: Request) {
+async function handleGenerate(request: Request) {
+  // Check authentication
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    logger.warn('Unauthenticated access attempt to generate API');
+    return createAuthErrorResponse();
+  }
+  
+  // Parse and validate the request body
+  const body = await request.json().catch(() => {
+    throw new Error('Invalid JSON in request body');
+  });
+  
   try {
-    // Check authentication
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      logger.warn('Unauthenticated access attempt to generate API');
-      return NextResponse.json({ 
-        error: 'Authentication required', 
-        code: 'AUTHENTICATION_ERROR' 
-      }, { status: 401 });
-    }
-    
-    // Parse and validate the request body
-    const body = await request.json().catch(() => {
-      throw new Error('Invalid JSON in request body');
-    });
-    
-    try {
-      requestSchema.parse(body);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errorDetail = error.errors[0];
-        return NextResponse.json(
-          { 
-            error: errorDetail.message,
-            code: 'INPUT_VALIDATION_ERROR',
-            field: errorDetail.path.join('.')
-          },
-          { status: 400 }
-        );
-      }
-      
-      // Handle refined validation errors
-      return NextResponse.json(
-        { 
-          error: error instanceof Error ? error.message : 'Invalid input format',
-          code: 'INPUT_VALIDATION_ERROR' 
-        },
-        { status: 400 }
+    requestSchema.parse(body);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const errorDetail = error.errors[0];
+      return createValidationErrorResponse(
+        errorDetail.message,
+        errorDetail.path.join('.'),
+        error.errors
       );
     }
     
-    const { prompt, mrn, clinic_id } = body;
-    
-    // Generate patient key if MRN and clinic_id are provided
-    let patientKey: string | undefined;
-    if (mrn && clinic_id) {
-      patientKey = generatePatientKey(mrn, clinic_id);
-    }
-    
-    // Track attempts to process GPT response
-    let attemptCount = 0;
-    let lastError: Error | null = null;
-    
-    while (attemptCount < MAX_PROCESSING_ATTEMPTS) {
-      attemptCount++;
-      
-      try {
-        // Call OpenAI API with retry logic for network/API errors
-        const completion = await retryWithExponentialBackoff(async () => {
-          try {
-            const startTime = Date.now();
-            logger.info(`Starting GPT API call for prompt: ${prompt.substring(0, 50)}...`);
-            
-            const result = await openai.chat.completions.create({
-              model: "gpt-4",
-              messages: [
-                { role: "system", content: SYSTEM_PROMPT },
-                { role: "user", content: prompt }
-              ],
-              temperature: 0.7,
-              max_tokens: 1000, // Prevent unreasonably long responses
-            });
-            
-            const duration = Date.now() - startTime;
-            logger.info(`GPT API call completed in ${duration}ms`);
-            
-            return result;
-          } catch (error: any) {
-            // Enhanced error classification for OpenAI errors
-            const status = error.status || 500;
-            const message = error.message || 'Error calling OpenAI API';
-            
-            // Classify which errors should be retried
-            const retryable = 
-              status === 429 || // Rate limiting
-              status === 503 || // Service unavailable 
-              status === 500 || // Server error
-              /timeout|timed? out/i.test(message); // Timeout errors
-              
-            logger.error(`OpenAI API error: ${message} (${status}), retryable: ${retryable}`);
-            
-            throw new OpenAIAPIError(message, status, retryable);
-          }
-        });
-
-        const response = completion.choices[0].message.content;
-        
-        // Parse and validate the response
-        const parsedResponse = cleanAndParseGPTResponse(response);
-        const validatedSuggestions = validateGPTResponse(parsedResponse);
-        
-        // Success path - add IDs to each suggestion
-        const suggestionsWithIds = validatedSuggestions.map(suggestion => ({
-          ...suggestion,
-          id: nanoid(8)
-        }));
-
-        // Generate a short ID for the suggestions batch
-        const suggestionId = nanoid(8);
-        
-        logger.info(`Successfully processed suggestions: ${suggestionId}`);
-        
-        // Store the result in the database with user_id and patient_key
-        const { data: promptData, error: insertError } = await supabase
-          .from('prompts')
-          .insert({
-            id: suggestionId,
-            prompt_text: prompt,
-            raw_gpt_output: suggestionsWithIds,
-            user_id: user.id,
-            patient_key: patientKey
-          })
-          .select()
-          .single();
-          
-        if (insertError) {
-          logger.error(`Error inserting prompt data: ${insertError.message}`);
-          throw new Error(`Failed to store suggestions: ${insertError.message}`);
-        }
-        
-        // Log audit event
-        await logAudit('generate', 'prompt', suggestionId, {
-          has_patient_key: !!patientKey,
-          suggestions_count: suggestionsWithIds.length
-        });
-
-        return NextResponse.json({ 
-          id: suggestionId,
-          suggestions: suggestionsWithIds
-        });
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        
-        // If this is a validation error that can't be fixed by retrying, break immediately
-        if (error instanceof GPTValidationError && 
-            error.code !== 'PARSE_ERROR' && 
-            error.code !== 'EMPTY_RESPONSE') {
-          break;
-        }
-        
-        // Log the error but continue to next attempt if we have attempts left
-        logger.warn(`Processing attempt ${attemptCount} failed: ${lastError.message}`);
-        
-        // Only continue if we have attempts left
-        if (attemptCount >= MAX_PROCESSING_ATTEMPTS) {
-          break;
-        }
-      }
-    }
-    
-    // If we get here, all attempts failed
-    logger.error(`All ${attemptCount} processing attempts failed for prompt`);
-    
-    // Return appropriate error response based on the last error
-    if (lastError instanceof GPTValidationError) {
-      return NextResponse.json(
-        { 
-          error: lastError.message,
-          details: lastError.details,
-          code: lastError.code || 'VALIDATION_ERROR'
-        },
-        { status: 400 }
-      );
-    }
-    
-    if (lastError instanceof OpenAIAPIError) {
-      return NextResponse.json(
-        { 
-          error: 'There was a problem connecting to our AI service',
-          details: lastError.message,
-          code: 'OPENAI_API_ERROR'
-        },
-        { status: lastError.status || 500 }
-      );
-    }
-    
-    if (lastError instanceof z.ZodError) {
-      return NextResponse.json(
-        { 
-          error: 'The exercise suggestions received were incomplete or invalid',
-          details: lastError.errors,
-          code: 'INPUT_VALIDATION_ERROR'
-        },
-        { status: 400 }
-      );
-    }
-    
-    // Generic fallback error
-    return NextResponse.json(
-      { 
-        error: lastError instanceof Error ? lastError.message : 'Failed to generate suggestions',
-        code: 'GENERATION_ERROR'
-      },
-      { status: 500 }
-    );
-  } catch (unexpectedError) {
-    // Catch-all for any unexpected errors
-    logger.error('Unexpected error in generate route:', unexpectedError);
-    
-    return NextResponse.json(
-      { 
-        error: 'An unexpected error occurred while processing your request',
-        code: 'UNEXPECTED_ERROR'
-      },
-      { status: 500 }
+    // Handle refined validation errors
+    return createValidationErrorResponse(
+      error instanceof Error ? error.message : 'Invalid input format'
     );
   }
-} 
+  
+  const { prompt, mrn, clinic_id } = body;
+  
+  // Generate patient key if MRN and clinic_id are provided
+  let patientKey: string | undefined;
+  if (mrn && clinic_id) {
+    patientKey = generatePatientKey(mrn, clinic_id);
+  }
+  
+  // Track attempts to process GPT response
+  let attemptCount = 0;
+  let lastError: Error | null = null;
+  
+  while (attemptCount < MAX_PROCESSING_ATTEMPTS) {
+    attemptCount++;
+    
+    try {
+      // Call OpenAI API with retry logic for network/API errors
+      const completion = await retryWithExponentialBackoff(async () => {
+        try {
+          const startTime = Date.now();
+          logger.info(`Starting GPT API call for prompt: ${prompt.substring(0, 50)}...`);
+          
+          const result = await openai.chat.completions.create({
+            model: "gpt-4",
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: prompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 1000, // Prevent unreasonably long responses
+          });
+          
+          const duration = Date.now() - startTime;
+          logger.info(`GPT API call completed in ${duration}ms`);
+          
+          return result;
+        } catch (error: any) {
+          // Enhanced error classification for OpenAI errors
+          const status = error.status || 500;
+          const message = error.message || 'Error calling OpenAI API';
+          
+          // Classify which errors should be retried
+          const retryable = 
+            status === 429 || // Rate limiting
+            status === 503 || // Service unavailable 
+            status === 500 || // Server error
+            /timeout|timed? out/i.test(message); // Timeout errors
+            
+          logger.error(`OpenAI API error: ${message} (${status}), retryable: ${retryable}`);
+          
+          throw new OpenAIAPIError(message, status, retryable);
+        }
+      });
+
+      const response = completion.choices[0].message.content;
+      
+      // Parse and validate the response
+      const parsedResponse = cleanAndParseGPTResponse(response);
+      const validatedSuggestions = validateGPTResponse(parsedResponse);
+      
+      // Success path - add IDs to each suggestion
+      const suggestionsWithIds = validatedSuggestions.map(suggestion => ({
+        ...suggestion,
+        id: nanoid(8)
+      }));
+
+      // Generate a short ID for the suggestions batch
+      const suggestionId = nanoid(8);
+      
+      logger.info(`Successfully processed suggestions: ${suggestionId}`);
+      
+      // Store the result in the database with user_id and patient_key
+      const { data: promptData, error: insertError } = await supabase
+        .from('prompts')
+        .insert({
+          id: suggestionId,
+          prompt_text: prompt,
+          raw_gpt_output: suggestionsWithIds,
+          user_id: user.id,
+          patient_key: patientKey
+        })
+        .select()
+        .single();
+        
+      if (insertError) {
+        logger.error(`Error inserting prompt data: ${insertError.message}`);
+        throw new Error(`Failed to store suggestions: ${insertError.message}`);
+      }
+      
+      // Log audit event
+      await logAudit('generate', 'prompt', suggestionId, {
+        has_patient_key: !!patientKey,
+        suggestions_count: suggestionsWithIds.length
+      });
+
+      return createSuccessResponse(
+        {
+          id: suggestionId,
+          suggestions: suggestionsWithIds
+        },
+        'Exercise suggestions generated successfully'
+      );
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      // If this is a validation error that can't be fixed by retrying, break immediately
+      if (error instanceof GPTValidationError && 
+          error.code !== 'PARSE_ERROR' && 
+          error.code !== 'EMPTY_RESPONSE') {
+        break;
+      }
+      
+      // Log the error but continue to next attempt if we have attempts left
+      logger.warn(`Processing attempt ${attemptCount} failed: ${lastError.message}`);
+      
+      // Only continue if we have attempts left
+      if (attemptCount >= MAX_PROCESSING_ATTEMPTS) {
+        break;
+      }
+    }
+  }
+  
+  // If we get here, all attempts failed
+  logger.error(`All ${attemptCount} processing attempts failed for prompt`);
+  
+  // Return appropriate error response based on the last error
+  if (lastError instanceof GPTValidationError) {
+    return createErrorResponse(
+      lastError.message,
+      400,
+      lastError.code || 'VALIDATION_ERROR',
+      JSON.stringify(lastError.details)
+    );
+  }
+  
+  if (lastError instanceof OpenAIAPIError) {
+    return createErrorResponse(
+      'There was a problem connecting to our AI service',
+      lastError.status || 500,
+      'OPENAI_API_ERROR',
+      lastError.message
+    );
+  }
+  
+  if (lastError instanceof z.ZodError) {
+    return createErrorResponse(
+      'The exercise suggestions received were incomplete or invalid',
+      400,
+      'INPUT_VALIDATION_ERROR',
+      JSON.stringify(lastError.errors)
+    );
+  }
+  
+  // Generic fallback error
+  return createServerErrorResponse(
+    lastError instanceof Error ? lastError.message : 'Failed to generate suggestions'
+  );
+}
+
+export const POST = withErrorHandling(handleGenerate); 

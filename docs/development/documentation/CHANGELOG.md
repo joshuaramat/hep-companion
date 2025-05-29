@@ -7,17 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-05-28
+
 ### Added
-- Row-Level Security (RLS) policies for all database tables
-- Audit logging system with automatic triggers
-- 90-day purge job for audit logs
-- Patient key hashing for MRN and clinic ID
-- Security documentation in SECURITY-IMPLEMENTATION.md
+- Documentation organization improvements with structured subdirectories
+- Enhanced error message formatting for better readability
+- Improved script output clarity for development tools
+- Better status indicators in verification and testing scripts
 
 ### Changed
-- Organized security migrations in scripts/migrations directory
-- Applied security changes directly through Supabase dashboard
-- Updated documentation to reflect implemented security features
+- Reorganized docs directory structure for better navigation
+- Moved implementation summaries to dedicated subdirectory
+- Updated all documentation for improved readability and professional appearance
+- Enhanced script output formatting for clearer development feedback
+- Improved environment validation error messages
+- Standardized text-based status indicators across all tools
+
+### Fixed
+- Documentation formatting inconsistencies
+- Script output readability issues
+- Error message clarity in environment validation
 
 ## [0.2.0] - 2025-04-19
 

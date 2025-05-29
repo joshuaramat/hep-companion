@@ -6,15 +6,15 @@ A Healthcare Exercise Prescription system designed for clinicians to generate ev
 
 This project uses Next.js 14, TypeScript, Supabase, and Tailwind CSS. For detailed documentation, setup instructions, and development guides, please refer to:
 
-**📁 [Development Documentation](./docs/development/)**
+**[Development Documentation](./docs/development/)**
 
 ## Key Features
 
-- 🏥 **Clinical Focus**: Evidence-based exercise prescriptions for LBP, ACL, and PFP conditions
-- 🤖 **AI-Powered**: GPT-4o integration with medical knowledge base
-- 🔒 **HIPAA-Ready**: Security-first architecture with RLS and audit trails  
-- 📱 **Modern UI**: Responsive design with accessibility standards
-- 🔍 **Citation-Based**: All recommendations backed by peer-reviewed research
+- **Clinical Focus**: Evidence-based exercise prescriptions for LBP, ACL, and PFP conditions
+- **AI-Powered**: GPT-4o integration with medical knowledge base
+- **HIPAA-Ready**: Security-first architecture with RLS and audit trails  
+- **Modern UI**: Responsive design with accessibility standards
+- **Citation-Based**: All recommendations backed by peer-reviewed research
 
 ## Development
 
