@@ -1,6 +1,10 @@
 version: '3.8'
 
+# Simplified Supabase stack for initial setup
+# This includes only the core services needed to get started
+
 services:
+  # Next.js Application
   app:
     build:
       context: .
@@ -10,18 +14,15 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Mount source code for hot-reload
       - .:/app
-      # Prevent node_modules from being overwritten by mount
       - /app/node_modules
-      # Prevent .next from being overwritten by mount
       - /app/.next
     env_file:
-      - .env.local
+      - .env.docker
     environment:
-      # Override any environment variables as needed
       NODE_ENV: development
-      WATCHPACK_POLLING: true # For hot-reload on some systems
+      WATCHPACK_POLLING: true
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
@@ -31,6 +32,64 @@ services:
     restart: unless-stopped
     networks:
       - hep-network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # PostgreSQL Database
+  db:
+    image: supabase/postgres:15.1.0.117
+    container_name: hep-companion-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - hep-network
+
+  # Supabase Studio (Database UI)
+  studio:
+    image: supabase/studio:latest
+    container_name: hep-companion-studio
+    ports:
+      - "3002:3000"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      DEFAULT_ORGANIZATION: "HEP Companion"
+      DEFAULT_PROJECT: "Local Development"
+      STUDIO_PG_META_URL: http://db:5432
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - hep-network
+
+  # Email testing
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: hep-companion-mailhog
+    platform: linux/amd64
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped
+    networks:
+      - hep-network
+
+volumes:
+  postgres_data:
+    driver: local
 
 networks:
   hep-network:

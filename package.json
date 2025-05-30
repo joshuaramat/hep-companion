@@ -34,10 +34,17 @@
     "seed-exercises": "npx tsx scripts/database/seed-exercises.ts",
     "verify:phase2": "npx tsx scripts/verify-phase2.ts",
     "docker:build": "docker build -t hep-companion:latest .",
-    "docker:dev": "docker-compose up -d",
-    "docker:dev:down": "docker-compose down",
-    "docker:dev:logs": "docker-compose logs -f app",
-    "docker:prod": "docker build --target production -t hep-companion:prod . && docker run -p 3000:3000 --env-file .env.local hep-companion:prod"
+    "docker:dev": "docker-compose --env-file .env.docker up -d",
+    "docker:dev:down": "docker-compose --env-file .env.docker down",
+    "docker:dev:logs": "docker-compose --env-file .env.docker logs -f app",
+    "docker:prod": "docker build --target production -t hep-companion:prod . && docker run -p 3000:3000 --env-file .env.local hep-companion:prod",
+    "docker:db:migrate": "docker-compose --env-file .env.docker exec -T db psql -U postgres -d postgres -f /docker-entrypoint-initdb.d/02-apply-migrations.sql",
+    "docker:db:reset": "docker-compose --env-file .env.docker down -v && docker-compose --env-file .env.docker up -d db && sleep 5 && npm run docker:db:migrate",
+    "docker:db:seed": "docker-compose --env-file .env.docker exec -T app npm run seed-exercises",
+    "docker:ps": "docker-compose --env-file .env.docker ps",
+    "docker:logs": "docker-compose --env-file .env.docker logs -f",
+    "docker:clean": "docker-compose --env-file .env.docker down -v --remove-orphans",
+    "docker:test": "node docker/test-connection.js"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

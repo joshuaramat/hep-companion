@@ -18,6 +18,22 @@ This project uses Next.js 14, TypeScript, Supabase, and Tailwind CSS. For detail
 
 ## Development
 
+### Option 1: Docker Setup (Recommended)
+
+```bash
+# Quick setup with local Supabase
+./docker/setup.sh
+
+# Or manual setup:
+cp docker/env.docker.example .env.docker
+# Update OPENAI_API_KEY in .env.docker (this file is gitignored)
+npm run docker:dev
+```
+
+Visit `http://localhost:3000` to access the application.
+
+### Option 2: Traditional Setup
+
 ```bash
 # Install dependencies
 npm install
@@ -29,7 +45,15 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Visit `http://localhost:3000` to access the application.
+## Docker Services
+
+When using Docker, you get a complete local development environment:
+
+- **Next.js App**: http://localhost:3000
+- **Supabase Studio**: http://localhost:3002 (Database UI)
+- **MailHog**: http://localhost:8025 (Email testing)
+- **PostgreSQL**: localhost:5432
+- **API Gateway**: http://localhost:8000
 
 For comprehensive setup, architecture, and contribution guidelines, see the [Development Documentation](./docs/development/).
 
