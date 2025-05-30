@@ -37,9 +37,9 @@ function createValidateEnv() {
         
         const errorSummary = [
           'Environment Variable Validation Failed',
-          '─'.repeat(50),
+          '-'.repeat(50),
           ...errorMessages,
-          '─'.repeat(50),
+          '-'.repeat(50),
           'Please check your .env.local file and ensure all required variables are set.',
           ''
         ].join('\n');

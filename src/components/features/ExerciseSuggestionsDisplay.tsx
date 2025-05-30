@@ -68,9 +68,9 @@ const RESEARCH_ARTICLES = {
   ]
 };
 
-// Helper function for emoji ratings
-function getEmoji(score: number): string {
-  return ['😕', '🙁', '😐', '🙂', '😊'][score - 1];
+// Helper function for text ratings
+function getRatingText(score: number): string {
+  return ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][score - 1];
 }
 
 export default function ExerciseSuggestionsDisplay({ 
@@ -236,7 +236,7 @@ export default function ExerciseSuggestionsDisplay({
                                   : ''
                             }`}
                           >
-                            {getEmoji(score)}
+                            {getRatingText(score)}
                           </button>
                         ))}
                       </div>

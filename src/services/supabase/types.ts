@@ -1,6 +1,38 @@
 export interface Database {
   public: {
     Tables: {
+      exercises: {
+        Row: {
+          id: string;
+          condition: 'LBP' | 'ACL' | 'PFP';
+          name: string;
+          description: string;
+          journal: string;
+          year: number;
+          doi: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          condition: 'LBP' | 'ACL' | 'PFP';
+          name: string;
+          description: string;
+          journal: string;
+          year: number;
+          doi?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          condition?: 'LBP' | 'ACL' | 'PFP';
+          name?: string;
+          description?: string;
+          journal?: string;
+          year?: number;
+          doi?: string | null;
+          created_at?: string;
+        };
+      };
       suggestions: {
         Row: {
           id: string;
