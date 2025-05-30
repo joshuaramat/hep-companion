@@ -84,10 +84,10 @@ The system prompt now includes:
 5. Clinical reasoning requirements
 
 ## Acceptance Criteria Met
-✅ AI responses include proper exercise citations
-✅ Schema validation catches malformed responses
-✅ API returns `{ ok: false, message }` on validation failure
-✅ UI shows toast notifications for errors
+AI responses include proper exercise citations
+Schema validation catches malformed responses
+API returns `{ ok: false, message }` on validation failure
+UI shows toast notifications for errors
 
 ## Testing Recommendations
 1. Test with various clinical scenarios to ensure proper exercise selection
