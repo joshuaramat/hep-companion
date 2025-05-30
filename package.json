@@ -32,7 +32,12 @@
     "fix-organization-sql": "node scripts/database/sql-fix-organization-constraint.js",
     "deploy-security": "node scripts/security/deploy-security.js",
     "seed-exercises": "npx tsx scripts/database/seed-exercises.ts",
-    "verify:phase2": "npx tsx scripts/verify-phase2.ts"
+    "verify:phase2": "npx tsx scripts/verify-phase2.ts",
+    "docker:build": "docker build -t hep-companion:latest .",
+    "docker:dev": "docker-compose up -d",
+    "docker:dev:down": "docker-compose down",
+    "docker:dev:logs": "docker-compose logs -f app",
+    "docker:prod": "docker build --target production -t hep-companion:prod . && docker run -p 3000:3000 --env-file .env.local hep-companion:prod"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
