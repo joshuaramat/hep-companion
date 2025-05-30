@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingSuggestions from '@/components/features/LoadingSuggestions';
 import { createClient } from '@/services/supabase/client';
+import { useToast } from '@/contexts/toast-context';
 
 export default function HomePage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const isSubmitting = useRef(false);
   const supabase = createClient();
+  const { showToast } = useToast();
 
   // Check if user is authenticated
   useEffect(() => {
@@ -55,18 +57,38 @@ export default function HomePage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate suggestions');
+        // Check if it's a validation error from our new schema
+        if (data.ok === false && data.message) {
+          showToast(data.message, 'error');
+          setError(data.message);
+        } else if (data.error) {
+          showToast(data.error, 'error');
+          setError(data.error);
+        } else {
+          const errorMsg = 'Failed to generate suggestions';
+          showToast(errorMsg, 'error');
+          setError(errorMsg);
+        }
+        return;
       }
 
-      if (!data.suggestions) {
-        throw new Error('Invalid response format');
+      if (!data.suggestions && !data.exercises) {
+        const errorMsg = 'Invalid response format';
+        showToast(errorMsg, 'error');
+        setError(errorMsg);
+        return;
       }
 
+      // Handle both old and new response formats
+      const exercises = data.exercises || data.suggestions;
+      
       // Use the shorter ID in the URL
-      router.push(`/suggestions?id=${data.id}&prompt=${encodeURIComponent(prompt)}&suggestions=${encodeURIComponent(JSON.stringify(data.suggestions))}`);
+      router.push(`/suggestions?id=${data.id}&prompt=${encodeURIComponent(prompt)}&suggestions=${encodeURIComponent(JSON.stringify(exercises))}`);
     } catch (error) {
       console.error('Error:', error);
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      const errorMsg = error instanceof Error ? error.message : 'An unexpected error occurred';
+      showToast(errorMsg, 'error');
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
       isSubmitting.current = false;
