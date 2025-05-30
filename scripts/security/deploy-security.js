@@ -22,11 +22,11 @@ const colors = {
 };
 
 console.log(`${colors.cyan}
-╔══════════════════════════════════════════════════╗
-║                                                  ║
-║           HEP Companion Security Setup           ║
-║                                                  ║
-╚══════════════════════════════════════════════════╝
++==================================================+
+|                                                  |
+|           HEP Companion Security Setup           |
+|                                                  |
++==================================================+
 ${colors.reset}`);
 
 console.log(`${colors.yellow}This script will apply the security migrations to your Supabase database.${colors.reset}\n`);

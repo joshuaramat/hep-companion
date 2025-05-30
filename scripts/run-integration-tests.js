@@ -79,9 +79,9 @@ testProcess.stderr.on('data', (data) => {
 // Handle process completion
 testProcess.on('close', (code) => {
   if (code === 0) {
-    console.log(`\n${colors.green}${colors.bright}✓ Integration tests completed successfully!${colors.reset}`);
+    console.log(`\n${colors.green}${colors.bright}[PASS] Integration tests completed successfully!${colors.reset}`);
   } else {
-    console.log(`\n${colors.red}${colors.bright}✗ Integration tests failed with code ${code}${colors.reset}`);
+    console.log(`\n${colors.red}${colors.bright}[FAIL] Integration tests failed with code ${code}${colors.reset}`);
     console.log(`\n${colors.yellow}View the HTML report for details: npx playwright show-report${colors.reset}`);
   }
 });

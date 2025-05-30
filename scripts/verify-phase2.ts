@@ -67,13 +67,13 @@ async function createExercise(exercise: any) {
 }
 
 async function verifyPhase2Implementation() {
-  console.log('🔍 Verifying Phase 2 Implementation...\n');
+  console.log('[VERIFY] Phase 2 Implementation...\n');
   
   let allTestsPassed = true;
   
   try {
     // Test 1: Verify total exercise count
-    console.log('📊 Test 1: Verifying exercise count...');
+    console.log('[TEST] 1: Verifying exercise count...');
     const allExercises = await getExercises();
     
     if (allExercises.length !== 30) {

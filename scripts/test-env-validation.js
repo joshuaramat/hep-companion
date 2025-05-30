@@ -24,9 +24,9 @@ try {
   delete require.cache[require.resolve('../src/config/env.ts')];
   const { validateEnv } = require('../src/config/env.ts');
   const env = validateEnv();
-  console.log('   ✓ Environment validation passed');
-  console.log(`   ✓ NODE_ENV: ${env.NODE_ENV}`);
-  console.log(`   ✓ SUPABASE_URL: ${env.NEXT_PUBLIC_SUPABASE_URL}`);
+  console.log('   [PASS] Environment validation passed');
+  console.log(`   [PASS] NODE_ENV: ${env.NODE_ENV}`);
+  console.log(`   [PASS] SUPABASE_URL: ${env.NEXT_PUBLIC_SUPABASE_URL}`);
 } catch (error) {
   console.log('   FAIL: Unexpected error:', error.message);
 }
@@ -49,7 +49,7 @@ try {
   validateEnv();
   console.log('   FAIL: Should have thrown an error');
 } catch (error) {
-  console.log('   ✓ Correctly threw error:', error.message.split('\n')[0]);
+  console.log('   [PASS] Correctly threw error:', error.message.split('\n')[0]);
 }
 
 // Test 3: Invalid URL
@@ -69,7 +69,7 @@ try {
   validateEnv();
   console.log('   FAIL: Should have thrown an error');
 } catch (error) {
-  console.log('   ✓ Correctly threw error:', error.message.split('\n')[0]);
+  console.log('   [PASS] Correctly threw error:', error.message.split('\n')[0]);
 }
 
 // Restore original environment
@@ -77,8 +77,8 @@ process.env = originalEnv;
 
 console.log('\nEnvironment validation tests completed!');
 console.log('\nSummary:');
-console.log('   • Environment validation correctly accepts valid configurations');
-console.log('   • Environment validation correctly rejects missing required variables');
-console.log('   • Environment validation correctly rejects invalid URL formats');
-console.log('   • All API routes now use standardized response format');
-console.log('   • Comprehensive test coverage implemented'); 
+console.log('   - Environment validation correctly accepts valid configurations');
+console.log('   - Environment validation correctly rejects missing required variables');
+console.log('   - Environment validation correctly rejects invalid URL formats');
+console.log('   - All API routes now use standardized response format');
+console.log('   - Comprehensive test coverage implemented'); 

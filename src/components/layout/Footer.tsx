@@ -35,7 +35,7 @@ export default function Footer() {
         </div>
         <div className="border-t border-cyan-500/30 py-6 text-center">
           <p className="text-sm text-cyan-100">
-            © {new Date().getFullYear()} HEP Companion. All rights reserved.
+            Copyright {new Date().getFullYear()} HEP Companion. All rights reserved.
           </p>
         </div>
       </div>

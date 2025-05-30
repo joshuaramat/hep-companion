@@ -31,6 +31,7 @@
     "fix-organization": "node scripts/database/fix-organization-constraint.js",
     "fix-organization-sql": "node scripts/database/sql-fix-organization-constraint.js",
     "deploy-security": "node scripts/security/deploy-security.js",
+    "seed-exercises": "npx tsx scripts/database/seed-exercises.ts",
     "verify:phase2": "npx tsx scripts/verify-phase2.ts"
   },
   "dependencies": {
