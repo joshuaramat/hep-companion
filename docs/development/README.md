@@ -30,6 +30,10 @@ Welcome to the HEP Companion development documentation. This directory contains 
 - **[Scripts README](./scripts/SCRIPTS_README.md)** - Development and deployment scripts
 - **[Migrations README](./database/MIGRATIONS_README.md)** - Database migration documentation
 
+### Docker Implementation
+- **[Docker Implementation Plan](./docker-implementation-plan.md)** - Phased Docker implementation with AI-executable prompts
+- **[Docker Quick Reference](./docker-quick-reference.md)** - Phase overview and quick commands
+
 ## Quick Start for Developers
 
 ### Prerequisites

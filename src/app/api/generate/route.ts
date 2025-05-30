@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { nanoid } from 'nanoid';
-import { validateGPTResponse, GPTValidationError, ValidationErrorType } from '@/utils/gpt-validation';
+import { GPTValidationError, ValidationErrorType } from '@/utils/gpt-validation';
 import { retryWithExponentialBackoff, OpenAIAPIError } from '@/utils/retry';
 import { z } from 'zod';
 import { validateClinicalInput } from '@/services/utils/validation';
@@ -18,6 +18,8 @@ import {
   createErrorResponse,
   withErrorHandling
 } from '@/utils/api-response';
+import { GPTResponseSchema } from '@/lib/schemas/gpt-response';
+import { getExercises } from '@/services/supabase/exercises';
 
 // Validate environment variables
 import '@/config/env';
@@ -35,34 +37,75 @@ if (!process.env.OPENAI_API_KEY) {
   logger.error('OPENAI_API_KEY environment variable is not set');
 }
 
-const SYSTEM_PROMPT = `You are a physical therapy assistant. Given a clinical scenario, respond with 3-5 exercise suggestions in JSON format. Each item must include:
-- exercise_name (string)
-- sets (integer)
-- reps (integer)
-- frequency (string)
-- citations (array of objects with title, authors, journal, year, doi, and url)
+// Function to create system prompt with exercise library
+async function createSystemPrompt(): Promise<string> {
+  try {
+    // Fetch all exercises from the database
+    const exercises = await getExercises();
+    
+    // Format exercises for inclusion in prompt
+    const exerciseLibrary = exercises.map(ex => ({
+      name: ex.name,
+      condition: ex.condition,
+      description: ex.description,
+      evidence_source: `${ex.journal}, ${ex.year}${ex.doi ? ` (DOI: ${ex.doi})` : ''}`
+    }));
 
-For each exercise, include 1-2 relevant peer-reviewed research citations from PubMed, JOSPT, or other reputable physical therapy journals. The citations should directly support the exercise parameters (sets, reps, frequency) you're recommending.
+    return `You are an expert physical therapy assistant with access to an evidence-based exercise library. 
 
-Example format:
+AVAILABLE EXERCISES:
+${JSON.stringify(exerciseLibrary, null, 2)}
+
+Given a clinical scenario, provide a personalized exercise program following this EXACT JSON format:
+
 {
-  "exercise_name": "Squat",
-  "sets": 3,
-  "reps": 12,
-  "frequency": "3 times per week",
-  "citations": [
+  "exercises": [
     {
-      "title": "The Effect of Squat Depth on Lower Extremity Joint Kinematics and Kinetics",
-      "authors": "Hartmann H, Wirth K, Klusemann M",
-      "journal": "Journal of Strength and Conditioning Research",
-      "year": "2013",
-      "doi": "10.1519/JSC.0b013e31826d9d7a",
-      "url": "https://pubmed.ncbi.nlm.nih.gov/22820210/"
+      "name": "Exercise name from the library",
+      "sets": 3,
+      "reps": "10-12",
+      "notes": "Optional specific instructions",
+      "evidence_source": "Full citation from the exercise library"
     }
-  ]
+  ],
+  "clinical_notes": "Brief clinical reasoning for this program",
+  "citations": [
+    "Full citation 1",
+    "Full citation 2"
+  ],
+  "confidence_level": "high" // or "medium" or "low"
 }
 
-Do not explain the exercises. Do not include instructions. Only output a valid JSON array of suggestions with citations.`;
+IMPORTANT REQUIREMENTS:
+1. Only recommend exercises from the provided library
+2. Each exercise MUST include the evidence_source field with the exact citation from the library
+3. The citations array should list all unique citations used
+4. Provide 3-5 exercises appropriate for the condition
+5. Include clinical reasoning in clinical_notes
+6. Assess your confidence level based on how well the available exercises match the patient's needs
+
+Do not include any text outside the JSON structure.`;
+  } catch (error) {
+    logger.error('Failed to fetch exercise library:', error);
+    // Fallback to basic prompt if database is unavailable
+    return `You are a physical therapy assistant. Given a clinical scenario, respond with 3-5 exercise suggestions in JSON format following this structure:
+
+{
+  "exercises": [
+    {
+      "name": "Exercise name",
+      "sets": 3,
+      "reps": "10-12",
+      "notes": "Optional notes",
+      "evidence_source": "Citation"
+    }
+  ],
+  "clinical_notes": "Clinical reasoning",
+  "citations": ["Citation 1", "Citation 2"],
+  "confidence_level": "medium"
+}`;
+  }
+}
 
 // Enhanced schema for validating the incoming request
 const requestSchema = z.object({
@@ -99,8 +142,8 @@ function cleanAndParseGPTResponse(rawResponse: string | null): unknown {
   } catch (error) {
     // Attempt more aggressive cleaning if standard cleaning failed
     try {
-      // Look for anything that looks like a JSON array
-      const jsonMatch = cleanResponse.match(/\[\s*{[\s\S]*}\s*\]/);
+      // Look for anything that looks like a JSON object (not array)
+      const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
       }
@@ -116,6 +159,30 @@ function cleanAndParseGPTResponse(rawResponse: string | null): unknown {
       },
       'PARSE_ERROR'
     );
+  }
+}
+
+// New validation function using GPTResponseSchema
+function validateGPTResponseWithSchema(data: unknown): z.infer<typeof GPTResponseSchema> {
+  try {
+    return GPTResponseSchema.parse(data);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const firstError = error.errors[0];
+      const errorMessage = `Invalid response format: ${firstError.message} at ${firstError.path.join('.')}`;
+      
+      throw new GPTValidationError(
+        errorMessage,
+        {
+          errors: error.errors.map(e => ({
+            path: e.path.join('.'),
+            message: e.message
+          }))
+        },
+        'VALIDATION_ERROR'
+      );
+    }
+    throw error;
   }
 }
 
@@ -178,7 +245,7 @@ async function handleGenerate(request: Request) {
           const result = await openai.chat.completions.create({
             model: "gpt-4",
             messages: [
-              { role: "system", content: SYSTEM_PROMPT },
+              { role: "system", content: await createSystemPrompt() },
               { role: "user", content: prompt }
             ],
             temperature: 0.7,
@@ -211,16 +278,23 @@ async function handleGenerate(request: Request) {
       
       // Parse and validate the response
       const parsedResponse = cleanAndParseGPTResponse(response);
-      const validatedSuggestions = validateGPTResponse(parsedResponse);
+      const validatedResponse = validateGPTResponseWithSchema(parsedResponse);
       
-      // Success path - add IDs to each suggestion
-      const suggestionsWithIds = validatedSuggestions.map(suggestion => ({
-        ...suggestion,
+      // Success path - generate ID for the batch
+      const suggestionId = nanoid(8);
+      
+      // Add IDs to each exercise suggestion
+      const exercisesWithIds = validatedResponse.exercises.map(exercise => ({
+        ...exercise,
         id: nanoid(8)
       }));
-
-      // Generate a short ID for the suggestions batch
-      const suggestionId = nanoid(8);
+      
+      // Prepare response data
+      const responseData = {
+        ...validatedResponse,
+        exercises: exercisesWithIds,
+        id: suggestionId
+      };
       
       logger.info(`Successfully processed suggestions: ${suggestionId}`);
       
@@ -230,7 +304,7 @@ async function handleGenerate(request: Request) {
         .insert({
           id: suggestionId,
           prompt_text: prompt,
-          raw_gpt_output: suggestionsWithIds,
+          raw_gpt_output: responseData,
           user_id: user.id,
           patient_key: patientKey
         })
@@ -245,14 +319,12 @@ async function handleGenerate(request: Request) {
       // Log audit event
       await logAudit('generate', 'prompt', suggestionId, {
         has_patient_key: !!patientKey,
-        suggestions_count: suggestionsWithIds.length
+        exercises_count: exercisesWithIds.length,
+        confidence_level: validatedResponse.confidence_level
       });
 
       return createSuccessResponse(
-        {
-          id: suggestionId,
-          suggestions: suggestionsWithIds
-        },
+        responseData,
         'Exercise suggestions generated successfully'
       );
     } catch (error) {
