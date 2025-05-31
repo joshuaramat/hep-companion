@@ -9,9 +9,9 @@ interface ProgressEvent {
 }
 
 interface UseSSEOptions {
-  onProgress?: (event: ProgressEvent) => void;
-  onResult?: (data: any) => void;
-  onError?: (error: string, code?: string) => void;
+  onProgress?: (_event: ProgressEvent) => void;
+  onResult?: (_data: any) => void;
+  onError?: (_error: string, _code?: string) => void;
 }
 
 export function useSSE(url: string, options: UseSSEOptions = {}) {

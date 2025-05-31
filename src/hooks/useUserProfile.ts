@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/services/supabase/client';
-import type { User } from '@supabase/supabase-js';
 
 interface UserProfile {
   id: string;
@@ -24,7 +23,7 @@ export function useUserProfile(): UseUserProfileReturn {
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -55,11 +54,11 @@ export function useUserProfile(): UseUserProfileReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [fetchProfile]);
 
   return {
     profile,
