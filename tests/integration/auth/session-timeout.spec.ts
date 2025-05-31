@@ -95,7 +95,7 @@ async function simulateSessionTimeout(page: any) {
  * Simulate idle timeout with custom duration
  */
 async function simulateIdleTimeout(page: any, minutes: number) {
-  await page.evaluate((mins) => {
+  await page.evaluate((mins: number) => {
     // Simulate idle timeout
     window.appState.isAuthenticated = false;
     window.appState.currentUser = null;
