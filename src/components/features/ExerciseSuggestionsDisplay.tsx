@@ -5,68 +5,10 @@ import { motion } from 'framer-motion';
 
 interface ExerciseSuggestionsDisplayProps {
   suggestions: ExerciseSuggestion[];
+  // eslint-disable-next-line no-unused-vars
   onFeedbackChange?: (suggestionId: string, score: number, comment?: string) => void;
   onSubmitFeedback?: () => void;
 }
-
-// Sample exercise-specific research articles
-const RESEARCH_ARTICLES = {
-  'squat': [
-    {
-      title: 'The Effect of Squat Depth on Lower Extremity Joint Kinematics and Kinetics',
-      authors: 'Hartmann H, Wirth K, Klusemann M',
-      journal: 'Journal of Strength and Conditioning Research',
-      year: '2013',
-      doi: '10.1519/JSC.0b013e31826d9d7a',
-      url: 'https://pubmed.ncbi.nlm.nih.gov/22820210/'
-    },
-    {
-      title: 'Biomechanical Analysis of the Squat Exercise',
-      authors: 'Escamilla RF, Fleisig GS, Zheng N, et al.',
-      journal: 'Medicine & Science in Sports & Exercise',
-      year: '2001',
-      doi: '10.1097/00005768-200101000-00013',
-      url: 'https://pubmed.ncbi.nlm.nih.gov/11194098/'
-    }
-  ],
-  'push-up': [
-    {
-      title: 'Muscle Activation During Push-Ups with Different Suspension Training Systems',
-      authors: 'Calatayud J, Borreani S, Colado JC, et al.',
-      journal: 'Journal of Sports Science & Medicine',
-      year: '2014',
-      doi: '10.52082/jssm.2014.502',
-      url: 'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4127517/'
-    }
-  ],
-  'plank': [
-    {
-      title: 'Core Muscle Activation During Swiss Ball and Traditional Abdominal Exercises',
-      authors: 'Escamilla RF, Babb E, DeWitt R, et al.',
-      journal: 'Journal of Orthopaedic & Sports Physical Therapy',
-      year: '2010',
-      doi: '10.2519/jospt.2010.3073',
-      url: 'https://pubmed.ncbi.nlm.nih.gov/20710095/'
-    }
-  ],
-  'default': [
-    {
-      title: 'Evidence-Based Physical Therapy Practice',
-      authors: 'Jette AM',
-      journal: 'Physical Therapy',
-      year: '2005',
-      doi: '10.1093/ptj/85.3.209',
-      url: 'https://pubmed.ncbi.nlm.nih.gov/15733046/'
-    },
-    {
-      title: 'Clinical Practice Guidelines for Physical Therapy',
-      authors: 'APTA Clinical Practice Guidelines',
-      journal: 'American Physical Therapy Association',
-      year: '2023',
-      url: 'https://www.apta.org/patient-care/evidence-based-practice-resources/clinical-practice-guidelines'
-    }
-  ]
-};
 
 // Helper function for text ratings
 function getRatingText(score: number): string {
@@ -98,7 +40,7 @@ export default function ExerciseSuggestionsDisplay({
     } else {
       setFeedback(prev => ({
         ...prev,
-        [suggestionId]: { score, comment }
+        [suggestionId]: { score: score, comment: comment }
       }));
       setIsRated(prev => ({ ...prev, [suggestionId]: true }));
       setActiveSection(prev => ({ ...prev, [suggestionId]: 'comment' }));
@@ -107,7 +49,7 @@ export default function ExerciseSuggestionsDisplay({
     setError(null);
   };
 
-  const handleSubmit = () => {
+  const _handleSubmit = () => {
     const missingRatings = suggestions
       .slice(0, 3)
       .filter(suggestion => !feedback[suggestion.id]?.score)
@@ -130,12 +72,6 @@ export default function ExerciseSuggestionsDisplay({
       ...prev,
       [suggestionId]: !prev[suggestionId]
     }));
-  };
-
-  const getExerciseArticles = (exerciseName: string) => {
-    const exerciseKey = exerciseName.toLowerCase();
-    const key = Object.keys(RESEARCH_ARTICLES).find(k => exerciseKey.includes(k)) || 'default';
-    return RESEARCH_ARTICLES[key as keyof typeof RESEARCH_ARTICLES];
   };
 
   return (

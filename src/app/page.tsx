@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/services/supabase/client';
 import { useToast } from '@/contexts/toast-context';
@@ -18,6 +18,7 @@ const GenerationProgress = dynamic(
 );
 
 // Lazy load the SSE hook
+// eslint-disable-next-line no-unused-vars
 const useSSELazy = () => {
   const [useSSE, setUseSSE] = useState<any>(null);
   
@@ -120,42 +121,42 @@ export default function HomePage() {
     : { connect: () => {}, disconnect: () => {}, isConnected: false };
 
   // Check if user is authenticated
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-      
-      if (!session) {
-        router.push('/auth/login?redirectUrl=/');
-        return;
-      }
-      
-      // Load user profile data including clinic_id
-      try {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('clinic_id, organization')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (error) {
-          console.error('Failed to load user profile:', error);
-        } else if (profile) {
-          // Auto-populate clinic ID from user's organization
-          if (profile.clinic_id) {
-            setClinicId(profile.clinic_id);
-          }
-          if (profile.organization) {
-            setOrganizationName(profile.organization);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading profile:', error);
-      }
-    };
+  const checkAuth = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsAuthenticated(!!session);
     
+    if (!session) {
+      router.push('/auth/login?redirectUrl=/');
+      return;
+    }
+    
+    // Load user profile data including clinic_id
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('clinic_id, organization')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (error) {
+        console.error('Failed to load user profile:', error);
+      } else if (profile) {
+        // Auto-populate clinic ID from user's organization
+        if (profile.clinic_id) {
+          setClinicId(profile.clinic_id);
+        }
+        if (profile.organization) {
+          setOrganizationName(profile.organization);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  }, [router, supabase]);
+  
+  useEffect(() => {
     checkAuth();
-  }, [router, supabase.auth]);
+  }, [checkAuth]);
 
   // Load streaming preference from localStorage
   useEffect(() => {
