@@ -65,7 +65,7 @@ export interface OrganizationContextType {
   selectedOrganization: Organization | null;
   
   /** Select an organization and persist the selection */
-  selectOrganization: (org: Organization) => void;
+  selectOrganization: (_org: Organization) => void;
   
   /** Clear the current organization selection */
   clearOrganization: () => void;
@@ -230,7 +230,7 @@ export interface OrganizationEvents {
  */
 export interface OrganizationSelectorProps {
   /** Callback when organization is selected */
-  onSelect?: (organization: Organization) => void;
+  onSelect?: (_organization: Organization) => void;
   
   /** Show clear button */
   showClear?: boolean;
@@ -300,7 +300,7 @@ export interface UseUserProfileReturn {
   reload: () => Promise<void>;
   
   /** Update user preferences */
-  updatePreferences: (preferences: Partial<UserProfile['preferences']>) => Promise<void>;
+  updatePreferences: (_preferences: Partial<UserProfile['preferences']>) => Promise<void>;
 }
 
 // =============================================================================
@@ -342,8 +342,8 @@ export interface OrganizationValidation {
 export class OrganizationError extends Error {
   constructor(
     message: string,
-    public code: 'NOT_FOUND' | 'INVALID_DATA' | 'STORAGE_ERROR' | 'NETWORK_ERROR' | 'VALIDATION_ERROR',
-    public context?: Record<string, any>
+    public _code: 'NOT_FOUND' | 'INVALID_DATA' | 'STORAGE_ERROR' | 'NETWORK_ERROR' | 'VALIDATION_ERROR',
+    public _context?: Record<string, any>
   ) {
     super(message);
     this.name = 'OrganizationError';
