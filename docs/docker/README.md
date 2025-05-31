@@ -19,6 +19,13 @@ This directory contains all Docker-related documentation for the HEP Companion p
 - **[Review Summary](./docker-review-summary.md)** - Executive summary of Docker review
 - **[Final Summary](./docker-review-final-summary.md)** - Final review summary and action items
 
+### Setup Guides
+
+- **[Quick Start](./quick-start.md)** - Fast Docker setup for development
+- **[Environment Setup](./environment-setup.md)** - Environment configuration and security
+- **[Secrets Management](./secrets-management.md)** - Managing sensitive configuration
+- **[SSL Setup](./ssl-setup.md)** - HTTPS and certificate configuration
+
 ## Quick Links
 
 ### Common Tasks

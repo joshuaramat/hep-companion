@@ -1,0 +1,156 @@
+name: Automated Backup
+
+on:
+  schedule:
+    # Run at 2 AM UTC every day
+    - cron: '0 2 * * *'
+  
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to backup'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  BACKUP_RETENTION_DAYS: 30
+
+jobs:
+  backup:
+    name: Database Backup
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set environment
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          else
+            echo "environment=production" >> $GITHUB_OUTPUT
+          fi
+          echo "timestamp=$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
+      
+      - name: Setup SSH for remote backup (if configured)
+        if: ${{ secrets.BACKUP_SSH_KEY != '' }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.BACKUP_SSH_KEY }}" > ~/.ssh/backup_key
+          chmod 600 ~/.ssh/backup_key
+          echo "${{ secrets.BACKUP_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+      
+      - name: Run backup script
+        run: |
+          chmod +x ./scripts/backup.sh
+          ./scripts/backup.sh
+        env:
+          ENVIRONMENT: ${{ steps.env.outputs.environment }}
+          TIMESTAMP: ${{ steps.env.outputs.timestamp }}
+      
+      # Option 1: Store in GitHub Artifacts (free, 90 day retention)
+      - name: Upload backup to GitHub Artifacts
+        if: ${{ secrets.EXTERNAL_BACKUP_URL == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ steps.env.outputs.environment }}-${{ steps.env.outputs.timestamp }}
+          path: /backups/backup_*.tar.gz
+          retention-days: 30
+      
+      # Option 2: Upload to external storage (configurable)
+      - name: Upload to external storage
+        if: ${{ secrets.EXTERNAL_BACKUP_URL != '' }}
+        run: |
+          BACKUP_FILE="/backups/backup_${{ steps.env.outputs.timestamp }}.tar.gz"
+          
+          # Support different storage types based on URL pattern
+          if [[ "${{ secrets.EXTERNAL_BACKUP_URL }}" =~ ^s3:// ]]; then
+            # AWS S3
+            aws s3 cp "$BACKUP_FILE" "${{ secrets.EXTERNAL_BACKUP_URL }}/${{ steps.env.outputs.environment }}/$(date +%Y/%m/%d)/"
+          elif [[ "${{ secrets.EXTERNAL_BACKUP_URL }}" =~ ^gs:// ]]; then
+            # Google Cloud Storage
+            gsutil cp "$BACKUP_FILE" "${{ secrets.EXTERNAL_BACKUP_URL }}/${{ steps.env.outputs.environment }}/$(date +%Y/%m/%d)/"
+          elif [[ "${{ secrets.EXTERNAL_BACKUP_URL }}" =~ ^ssh:// ]]; then
+            # SSH/SCP to remote server
+            scp -i ~/.ssh/backup_key "$BACKUP_FILE" "${{ secrets.EXTERNAL_BACKUP_URL }}/${{ steps.env.outputs.environment }}/"
+          elif [[ "${{ secrets.EXTERNAL_BACKUP_URL }}" =~ ^https:// ]]; then
+            # Generic HTTP endpoint (like Backblaze B2, etc)
+            curl -X PUT -T "$BACKUP_FILE" \
+              -H "Authorization: Bearer ${{ secrets.BACKUP_TOKEN }}" \
+              "${{ secrets.EXTERNAL_BACKUP_URL }}/${{ steps.env.outputs.environment }}/backup_${{ steps.env.outputs.timestamp }}.tar.gz"
+          fi
+      
+      - name: Clean up old GitHub artifacts
+        if: ${{ secrets.EXTERNAL_BACKUP_URL == '' }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            
+            const backupArtifacts = artifacts.data.artifacts.filter(artifact => 
+              artifact.name.startsWith('backup-')
+            );
+            
+            // Sort by created date and keep only recent ones
+            const sortedArtifacts = backupArtifacts.sort((a, b) => 
+              new Date(b.created_at) - new Date(a.created_at)
+            );
+            
+            // Delete artifacts older than retention period
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - ${{ env.BACKUP_RETENTION_DAYS }});
+            
+            for (const artifact of sortedArtifacts) {
+              if (new Date(artifact.created_at) < cutoffDate) {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id
+                });
+                console.log(`Deleted old backup: ${artifact.name}`);
+              }
+            }
+      
+      - name: Send notification
+        if: always() && ${{ secrets.NOTIFICATION_WEBHOOK != '' }}
+        run: |
+          # Generic webhook notification (works with Slack, Discord, Teams, etc)
+          curl -X POST "${{ secrets.NOTIFICATION_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "text": "Backup Status: ${{ job.status }}",
+              "environment": "${{ steps.env.outputs.environment }}",
+              "timestamp": "${{ steps.env.outputs.timestamp }}",
+              "workflow": "${{ github.workflow }}",
+              "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }'
+      
+      - name: Create backup summary
+        if: success()
+        run: |
+          cat > $GITHUB_STEP_SUMMARY << EOF
+          ## Backup Summary
+          
+          - **Status**: ✅ Success
+          - **Environment**: ${{ steps.env.outputs.environment }}
+          - **Timestamp**: ${{ steps.env.outputs.timestamp }}
+          - **Retention**: ${{ env.BACKUP_RETENTION_DAYS }} days
+          - **Storage**: ${{ secrets.EXTERNAL_BACKUP_URL != '' && 'External Storage' || 'GitHub Artifacts' }}
+          
+          ### Next Steps
+          1. Verify backup integrity
+          2. Test restore procedure monthly
+          3. Monitor backup sizes for anomalies
+          EOF 
