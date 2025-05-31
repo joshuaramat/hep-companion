@@ -77,7 +77,7 @@ if [ ${#ports_in_use[@]} -gt 0 ]; then
         echo "   - Port $port"
     done
     echo ""
-    echo "Please stop the services using these ports or modify docker-compose.yml"
+    echo "Please stop the services using these ports or modify docker/docker-compose.yml"
     read -p "Continue anyway? (y/n) " -n 1 -r
     echo ""
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then

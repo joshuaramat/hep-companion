@@ -31,8 +31,10 @@ Welcome to the HEP Companion development documentation. This directory contains 
 - **[Migrations README](./database/MIGRATIONS_README.md)** - Database migration documentation
 
 ### Docker Implementation
-- **[Docker Implementation Plan](./docker-implementation-plan.md)** - Phased Docker implementation with AI-executable prompts
-- **[Docker Quick Reference](./docker-quick-reference.md)** - Phase overview and quick commands
+- **[Docker Documentation](./docker/)** - All Docker-related documentation
+  - **[Implementation Plan](./docker/docker-implementation-plan.md)** - Phased Docker implementation
+  - **[Quick Reference](./docker/docker-quick-reference.md)** - Commands and troubleshooting
+  - **[Setup Guide](./docker/docker-phase2-supabase.md)** - Local development setup
 
 ## Quick Start for Developers
 

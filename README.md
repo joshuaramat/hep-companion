@@ -16,6 +16,66 @@ This project uses Next.js 14, TypeScript, Supabase, and Tailwind CSS. For detail
 - **Modern UI**: Responsive design with accessibility standards
 - **Citation-Based**: All recommendations backed by peer-reviewed research
 
+## Development Environment
+
+### Quick Start with VSCode (Recommended)
+
+1. Install prerequisites:
+   - Docker Desktop
+   - VSCode with Remote Containers extension
+   - Git
+
+2. Clone and open in VSCode:
+   ```bash
+   git clone https://github.com/your-org/hep-companion.git
+   cd hep-companion
+   code .
+   ```
+
+3. Click "Open Folder in Container" when prompted
+
+4. Start services:
+   ```bash
+   # Start all services
+   make dev
+
+   # Start development tools
+   make dev-tools
+
+   # Start monitoring stack
+   make monitoring
+   ```
+
+### Development Tools
+
+- **Debugging**: Node.js debugger on port 9229
+- **Performance**: Clinic.js profiling
+- **Database**: PostgreSQL client and management tools
+- **Monitoring**: Grafana, Prometheus, and Loki
+
+### Common Commands
+
+```bash
+# Run tests
+make test
+make test-watch
+make test-integration
+
+# Database operations
+make db-backup
+make db-restore file=backup.sql
+make db-reset
+
+# Debugging
+make debug cmd="npm run dev"
+make profile cmd="npm run dev"
+
+# View logs
+make logs
+```
+
+For detailed development setup and workflow, see [Developer Onboarding Guide](./docs/development/onboarding.md).
+
 ## Development
 
 ### Option 1: Docker Setup (Recommended)
@@ -49,11 +109,13 @@ npm run dev
 
 When using Docker, you get a complete local development environment:
 
-- **Next.js App**: http://localhost:3000
-- **Supabase Studio**: http://localhost:3002 (Database UI)
-- **MailHog**: http://localhost:8025 (Email testing)
-- **PostgreSQL**: localhost:5432
-- **API Gateway**: http://localhost:8000
+- **Next.js App** - Running on http://localhost:3000
+- **PostgreSQL** - Database on port 5432
+- **Supabase Auth** - Authentication service on port 9999
+- **Supabase Studio** - Database UI on http://localhost:3002
+- **Mailhog** - Email testing UI on http://localhost:8025
+
+> **Note**: The Docker setup uses a simplified Supabase stack optimized for this application's needs. It includes only the essential services: database, auth, and studio. For details on the architectural decision and recent review findings, see [Docker Review Summary](./docs/development/docker-review-summary.md) and [Comprehensive Review](./docs/development/docker-review-comprehensive.md).
 
 For comprehensive setup, architecture, and contribution guidelines, see the [Development Documentation](./docs/development/).
 

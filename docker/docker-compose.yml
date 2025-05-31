@@ -1,6 +1,10 @@
 version: '3.8'
 
+# Simplified Supabase stack for initial setup
+# This includes only the core services needed to get started
+
 services:
+  # Next.js Application
   app:
     build:
       context: .
@@ -10,22 +14,17 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Mount source code for hot-reload
       - .:/app
-      # Prevent node_modules from being overwritten by mount
       - /app/node_modules
-      # Prevent .next from being overwritten by mount
       - /app/.next
     env_file:
       - .env.docker
     environment:
-      # Override any environment variables as needed
       NODE_ENV: development
-      WATCHPACK_POLLING: true # For hot-reload on some systems
-      # Docker-specific Supabase URLs
-      NEXT_PUBLIC_SUPABASE_URL: http://kong:8000
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
-      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      WATCHPACK_POLLING: true
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
+      # Auth service URL for server-side
+      GOTRUE_URL: http://auth:9999
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
@@ -38,7 +37,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      kong:
+      auth:
         condition: service_started
 
   # PostgreSQL Database
@@ -52,9 +51,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     volumes:
-      # Persist database data
       - postgres_data:/var/lib/postgresql/data
-      # Initialize database with migrations
       - ./docker/init-db:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -65,18 +62,28 @@ services:
     networks:
       - hep-network
 
-  # PostgREST - REST API
-  postgrest:
-    image: postgrest/postgrest:v10.1.2
-    container_name: hep-companion-postgrest
+  # Supabase Auth Service (GoTrue)
+  auth:
+    image: supabase/gotrue:v2.173.0
+    container_name: hep-companion-auth
     environment:
-      PGRST_DB_URI: postgres://postgres:postgres@db:5432/postgres
-      PGRST_DB_SCHEMA: public,auth,storage
-      PGRST_DB_ANON_ROLE: anon
-      PGRST_JWT_SECRET: ${JWT_SECRET}
-      PGRST_DB_USE_LEGACY_GUCS: "false"
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://postgres:postgres@db:5432/postgres?search_path=auth
+      GOTRUE_SITE_URL: http://localhost:3000
+      GOTRUE_URI_ALLOW_LIST: http://localhost:3000
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_DISABLE_SIGNUP: false
+      GOTRUE_EMAIL_ENABLE: true
+      GOTRUE_SMTP_HOST: mailhog
+      GOTRUE_SMTP_PORT: 1025
+      GOTRUE_SMTP_ADMIN_EMAIL: admin@hep-companion.local
+      GOTRUE_SMTP_MAX_FREQUENCY: 1s
+      GOTRUE_MAILER_AUTOCONFIRM: true # For development
     ports:
-      - "3001:3000"
+      - "9999:9999"
     depends_on:
       db:
         condition: service_healthy
@@ -84,41 +91,49 @@ services:
     networks:
       - hep-network
 
-  # Supabase Studio (Database Management UI)
+  # Supabase Studio (Database UI)
   studio:
     image: supabase/studio:latest
     container_name: hep-companion-studio
     ports:
       - "3002:3000"
     environment:
-      SUPABASE_URL: http://kong:8000
+      POSTGRES_PASSWORD: postgres
+      DEFAULT_ORGANIZATION: "HEP Companion"
+      DEFAULT_PROJECT: "Local Development"
+      STUDIO_PG_META_URL: http://db:5432
+      SUPABASE_URL: http://localhost:8000
       SUPABASE_ANON_KEY: ${ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
-      STUDIO_PG_META_URL: http://pg-meta:8080
     depends_on:
       - db
-      - kong
+      - auth
     restart: unless-stopped
     networks:
       - hep-network
 
-  # Supabase Kong API Gateway
-  kong:
-    image: kong:2.8-alpine
-    container_name: hep-companion-kong
-    platform: linux/amd64  # Kong 2.8 doesn't have ARM64 support
+  # Email testing
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: hep-companion-mailhog
+    platform: linux/amd64
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped
+    networks:
+      - hep-network
+
+  # Nginx API Gateway (simplified replacement for Kong)
+  nginx:
+    image: nginx:alpine
+    container_name: hep-companion-nginx
     ports:
       - "8000:8000"
-      - "8443:8443"
-    env_file:
-      - .env.docker
-    environment:
-      KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml
-      KONG_DNS_ORDER: LAST,A,CNAME
-      KONG_LOG_LEVEL: info
     volumes:
-      - ./docker/kong/kong.yml:/var/lib/kong/kong.yml
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - auth
     restart: unless-stopped
     networks:
       - hep-network
