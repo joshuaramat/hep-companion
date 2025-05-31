@@ -6,6 +6,31 @@ process.env.OPENAI_API_KEY = 'test-api-key';
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
 
+// Add TextEncoder/TextDecoder for Node.js environment
+const { TextEncoder, TextDecoder } = require('util');
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
+// Add Response global for MSW/integration tests
+class MockResponse {
+  constructor(body, init) {
+    this.body = body;
+    this.status = init?.status || 200;
+    this.statusText = init?.statusText || 'OK';
+    this.headers = new MockHeaders(init?.headers);
+  }
+  
+  async json() {
+    return JSON.parse(this.body);
+  }
+  
+  async text() {
+    return this.body;
+  }
+}
+
+global.Response = MockResponse;
+
 // Mock web Request/Response globals for Node.js environment
 class MockRequest {
   url;

@@ -171,6 +171,92 @@ export const handlers = [
     }
   }),
   
+  // New SSE endpoint for streaming generation
+  http.post('*/api/generate-stream', async ({ request }) => {
+    try {
+      const body = await request.json();
+      
+      // Validation
+      if (!body?.prompt || body.prompt.length < 20) {
+        const encoder = new TextEncoder();
+        const errorEvent = encoder.encode(
+          `data: ${JSON.stringify({
+            stage: 'started',
+            message: 'Please provide more detailed information',
+            progress: 0,
+            error: 'VALIDATION_ERROR'
+          })}\n\n`
+        );
+        
+        return new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue(errorEvent);
+              controller.close();
+            }
+          }),
+          {
+            headers: {
+              'Content-Type': 'text/event-stream',
+              'Cache-Control': 'no-cache',
+              'Connection': 'keep-alive',
+            }
+          }
+        );
+      }
+      
+      // Simulate SSE stream
+      const encoder = new TextEncoder();
+      let sent = 0;
+      
+      const events = [
+        { stage: 'started', message: 'Starting...', progress: 5 },
+        { stage: 'fetching-exercises', message: 'Loading exercises...', progress: 15 },
+        { stage: 'generating', message: 'Generating recommendations...', progress: 40 },
+        { stage: 'validating', message: 'Validating...', progress: 70 },
+        { stage: 'storing', message: 'Saving...', progress: 85 },
+        { stage: 'complete', message: 'Complete!', progress: 100 },
+      ];
+      
+      return new Response(
+        new ReadableStream({
+          async start(controller) {
+            // Send progress events
+            for (const event of events) {
+              await delay(100);
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
+              );
+            }
+            
+            // Send final result
+            await delay(100);
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({
+                type: 'result',
+                data: {
+                  id: 'test-generation-id',
+                  exercises: mockExerciseSuggestions
+                }
+              })}\n\n`)
+            );
+            
+            controller.close();
+          }
+        }),
+        {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          }
+        }
+      );
+    } catch (error) {
+      return new Response('Error', { status: 500 });
+    }
+  }),
+  
   http.post('*/api/feedback', async ({ request }) => {
     await delay(200);
     try {

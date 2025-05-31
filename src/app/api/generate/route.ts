@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
-import { nanoid } from 'nanoid';
 import { GPTValidationError, ValidationErrorType } from '@/utils/gpt-validation';
 import { retryWithExponentialBackoff, OpenAIAPIError } from '@/utils/retry';
 import { z } from 'zod';
@@ -11,12 +10,10 @@ import { cookies } from 'next/headers';
 import { generatePatientKey } from '@/utils/patient-key';
 import { logAudit } from '@/services/audit';
 import {
-  createSuccessResponse,
   createAuthErrorResponse,
   createValidationErrorResponse,
   createServerErrorResponse,
-  createErrorResponse,
-  withErrorHandling
+  createErrorResponse
 } from '@/utils/api-response';
 import { GPTResponseSchema } from '@/lib/schemas/gpt-response';
 import { getExercises } from '@/services/supabase/exercises';
@@ -280,13 +277,13 @@ async function handleGenerate(request: Request) {
       const parsedResponse = cleanAndParseGPTResponse(response);
       const validatedResponse = validateGPTResponseWithSchema(parsedResponse);
       
-      // Success path - generate ID for the batch
-      const suggestionId = nanoid(8);
+      // Success path - generate UUID for the batch
+      const suggestionId = crypto.randomUUID();
       
-      // Add IDs to each exercise suggestion
+      // Add UUIDs to each exercise suggestion
       const exercisesWithIds = validatedResponse.exercises.map(exercise => ({
         ...exercise,
-        id: nanoid(8)
+        id: crypto.randomUUID()
       }));
       
       // Prepare response data
@@ -323,10 +320,8 @@ async function handleGenerate(request: Request) {
         confidence_level: validatedResponse.confidence_level
       });
 
-      return createSuccessResponse(
-        responseData,
-        'Exercise suggestions generated successfully'
-      );
+      // Return the response data directly
+      return NextResponse.json(responseData);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       
@@ -384,4 +379,6 @@ async function handleGenerate(request: Request) {
   );
 }
 
-export const POST = withErrorHandling(handleGenerate); 
+export async function POST(request: Request) {
+  return handleGenerate(request);
+} 
