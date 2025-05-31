@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { createClient } from '@/services/supabase/client';
 import { useRouter } from 'next/navigation';
+import type { Session } from '@supabase/supabase-js';
 
 export default function SessionProvider({ 
   children,
@@ -13,9 +14,10 @@ export default function SessionProvider({
   idleTimeout?: number;
 }) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const { isIdle } = useIdleTimeout(idleTimeout);
+  const { isIdle: _isIdle } = useIdleTimeout(idleTimeout);
   const supabase = createClient();
   const router = useRouter();
+  const [_session, _setSession] = useState<Session | null>(null);
 
   // Check auth status on initial load
   useEffect(() => {
