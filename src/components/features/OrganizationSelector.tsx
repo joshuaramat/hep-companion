@@ -8,8 +8,8 @@ type Organization = {
 };
 
 type OrganizationSelectorProps = {
-  onSelect: (org: Organization) => void;
-  onCreateNew: (name: string) => void;
+  onSelect: (_org: Organization) => void;
+  onCreateNew: (_name: string) => void;
   defaultName?: string;
 };
 

@@ -4,7 +4,7 @@ import ErrorMessage from '../ui/ErrorMessage';
 import { useErrorHandler, ApiError } from '@/hooks/useErrorHandler';
 
 interface GenerateFormProps {
-  onSubmit: (prompt: string) => Promise<void>;
+  onSubmit: (_prompt: string) => void;
   isLoading: boolean;
 }
 
