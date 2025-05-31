@@ -12,7 +12,7 @@ jest.mock('@/utils/retry', () => {
       try {
         return await fn();
       } catch (error: unknown) {
-        if (retries <= 0 || !(error instanceof originalModule.OpenAIAPIError) || !(error as OpenAIAPIError).retryable) {
+        if (retries <= 0 || !(error instanceof originalModule.OpenAIAPIError) || !(error as OpenAIAPIError)._retryable) {
           throw error;
         }
         return originalModule.retryWithExponentialBackoff(fn, retries - 1, 0);

@@ -44,8 +44,8 @@ describe('GPT Response Validation', () => {
       fail('Should have thrown an error');
     } catch (error) {
       expect(error).toBeInstanceOf(GPTValidationError);
-      expect((error as GPTValidationError).code).toBe('INVALID_STRUCTURE');
-      expect((error as GPTValidationError).details?.errorType).toBe(ValidationErrorType.INVALID_STRUCTURE);
+      expect((error as GPTValidationError)._code).toBe('INVALID_STRUCTURE');
+      expect((error as GPTValidationError)._details?.errorType).toBe(ValidationErrorType._INVALID_STRUCTURE);
     }
   });
 
@@ -75,7 +75,7 @@ describe('GPT Response Validation', () => {
       
       // Verify that the details include the missing field path
       const gpgError = error as GPTValidationError;
-      const details = gpgError.details?.details || [];
+      const details = gpgError._details?.details || [];
       const hasMissingFieldError = Array.isArray(details) && 
         details.some(detail => 
           detail.path && detail.message && 
@@ -109,7 +109,7 @@ describe('GPT Response Validation', () => {
       fail('Should have thrown an error');
     } catch (error) {
       expect(error).toBeInstanceOf(GPTValidationError);
-      expect((error as GPTValidationError).code).toBe('INVALID_DATA_TYPE');
+      expect((error as GPTValidationError)._code).toBe('INVALID_DATA_TYPE');
     }
   });
 
@@ -158,7 +158,7 @@ describe('GPT Response Validation', () => {
       fail('Should have thrown an error');
     } catch (error) {
       expect(error).toBeInstanceOf(GPTValidationError);
-      expect((error as GPTValidationError).code).toBe('EMPTY_RESPONSE');
+      expect((error as GPTValidationError)._code).toBe('EMPTY_RESPONSE');
     }
 
     try {
@@ -166,7 +166,7 @@ describe('GPT Response Validation', () => {
       fail('Should have thrown an error');
     } catch (error) {
       expect(error).toBeInstanceOf(GPTValidationError);
-      expect((error as GPTValidationError).code).toBe('EMPTY_RESPONSE');
+      expect((error as GPTValidationError)._code).toBe('EMPTY_RESPONSE');
     }
   });
 
@@ -192,7 +192,7 @@ describe('GPT Response Validation', () => {
       fail('Should have thrown an error');
     } catch (error) {
       expect(error).toBeInstanceOf(GPTValidationError);
-      expect((error as GPTValidationError).code).toBe('TOO_MANY_SUGGESTIONS');
+      expect((error as GPTValidationError)._code).toBe('TOO_MANY_SUGGESTIONS');
     }
   });
 
@@ -244,7 +244,7 @@ describe('GPT Response Validation', () => {
       fail('Should have thrown an error');
     } catch (error) {
       expect(error).toBeInstanceOf(GPTValidationError);
-      expect((error as GPTValidationError).details?.details[0].path).toContain('citations');
+      expect((error as GPTValidationError)._details?.details[0].path).toContain('citations');
     }
   });
 }); 

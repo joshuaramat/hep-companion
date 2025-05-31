@@ -6,7 +6,7 @@ describe('API Error Utilities', () => {
       const error = new APIError('Not found', 404);
       
       expect(error.message).toBe('Not found');
-      expect(error.status).toBe(404);
+      expect(error._status).toBe(404);
       expect(error.name).toBe('APIError');
     });
     
@@ -14,8 +14,8 @@ describe('API Error Utilities', () => {
       const error = new APIError('Bad request', 400, 'VALIDATION_ERROR');
       
       expect(error.message).toBe('Bad request');
-      expect(error.status).toBe(400);
-      expect(error.code).toBe('VALIDATION_ERROR');
+      expect(error._status).toBe(400);
+      expect(error._code).toBe('VALIDATION_ERROR');
       expect(error.name).toBe('APIError');
     });
   });
