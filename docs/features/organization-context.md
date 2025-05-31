@@ -138,8 +138,8 @@ State Persistence → Form Auto-Population → Cross-Navigation Persistence
 ## Documentation
 
 ### For Developers
-- [TypeScript Type Definitions](../../types/organization.ts)
-- [User Profile Hook](../../hooks/useUserProfile.ts)
+- TypeScript Type Definitions: `src/types/organization.ts`
+- User Profile Hook: `src/hooks/useUserProfile.ts`
 
 ### For QA Engineers
 - [Manual Testing Checklist](./organization-context-testing.md)

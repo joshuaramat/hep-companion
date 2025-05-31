@@ -1,7 +1,6 @@
 # HEP Companion
 
 [![CI](https://github.com/joshuaramat/hep-companion/actions/workflows/ci.yml/badge.svg)](https://github.com/joshuaramat/hep-companion/actions/workflows/ci.yml)
-[![Docker CD](https://github.com/joshuaramat/hep-companion/actions/workflows/docker-cd.yml/badge.svg)](https://github.com/joshuaramat/hep-companion/actions/workflows/docker-cd.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Healthcare Exercise Prescription system designed for clinicians to generate evidence-based exercise recommendations with AI assistance.
