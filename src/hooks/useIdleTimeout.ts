@@ -13,7 +13,7 @@ export function useIdleTimeout(idleTime = 15) {
 
   useEffect(() => {
     const idleTimeoutMs = idleTime * 60 * 1000; // Convert minutes to milliseconds
-    let idleTimer: NodeJS.Timeout;
+    let idleTimer: ReturnType<typeof setTimeout>;
 
     // Function to reset the idle timer
     const resetIdleTimer = () => {

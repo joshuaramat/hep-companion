@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/services/supabase/client';
 import OrganizationSelector from '@/components/features/OrganizationSelector';
@@ -16,7 +16,7 @@ export default function SettingsPage() {
   const [clinicId, setClinicId] = useState('');
   const [profession, setProfession] = useState('');
   const [organization, setOrganization] = useState('');
-  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+  const [_selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [showOrgSelector, setShowOrgSelector] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,7 +60,7 @@ export default function SettingsPage() {
     };
     
     fetchUserProfile();
-  }, [router]);
+  }, [router, supabase]);
   
   const handleOrgSelect = (org: Organization) => {
     setSelectedOrg(org);

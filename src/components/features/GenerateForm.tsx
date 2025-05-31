@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { validateClinicalInput } from '@/services/utils/validation';
 import ErrorMessage from '../ui/ErrorMessage';
 import { useErrorHandler, ApiError } from '@/hooks/useErrorHandler';
-import { ApiErrorCode } from '@/types/api';
 
 interface GenerateFormProps {
   onSubmit: (prompt: string) => Promise<void>;

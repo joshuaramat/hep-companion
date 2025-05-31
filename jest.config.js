@@ -37,10 +37,24 @@ const config = {
     "**/?(*.)+(spec|test).ts?(x)"
   ],
 
+  // A list of paths to directories that Jest should use to search for files in
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "/tests/integration/.*\\.spec\\.(ts|js)$"
+  ],
+
   // A map from regular expressions to paths to transformers
   transform: {
-    // Use babel-jest to process JavaScript and TypeScript files
-    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest'
+    // Use @swc/jest for JavaScript and TypeScript files (faster than babel-jest)
+    '^.+\\.(js|jsx|ts|tsx)$': ['@swc/jest', {
+      jsc: {
+        transform: {
+          react: {
+            runtime: 'automatic',
+          },
+        },
+      },
+    }]
   },
   
   // Don't transform node_modules except for specific packages

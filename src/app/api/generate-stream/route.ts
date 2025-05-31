@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       const cookieStore = cookies();
-      const supabase = createClient(cookieStore);
+      const supabase = await createClient();
       const startTime = Date.now();
       let lastStageTime = startTime;
       

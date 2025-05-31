@@ -96,7 +96,8 @@ describe('Organizations Search API Route Handler', () => {
     
     expect(mockJson).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: 'Authentication required',
+        ok: false,
+        message: 'Authentication required',
         code: 'AUTHENTICATION_ERROR'
       }),
       { status: 401 }
@@ -110,9 +111,11 @@ describe('Organizations Search API Route Handler', () => {
     
     expect(mockJson).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: 'Invalid search query',
+        ok: false,
+        message: 'Invalid search query',
         code: 'VALIDATION_ERROR',
-        details: expect.arrayContaining([
+        error: 'Validation failed for field: query',
+        data: expect.arrayContaining([
           expect.objectContaining({
             message: expect.stringContaining('Expected string'),
             path: ['query']
@@ -130,9 +133,11 @@ describe('Organizations Search API Route Handler', () => {
     
     expect(mockJson).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: 'Invalid search query',
+        ok: false,
+        message: 'Invalid search query',
         code: 'VALIDATION_ERROR',
-        details: expect.arrayContaining([
+        error: 'Validation failed for field: query',
+        data: expect.arrayContaining([
           expect.objectContaining({
             message: 'Search query is required',
             path: ['query']
@@ -155,8 +160,10 @@ describe('Organizations Search API Route Handler', () => {
     
     expect(mockJson).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: 'Failed to search organizations',
-        code: 'DATABASE_ERROR'
+        ok: false,
+        message: 'Failed to search organizations',
+        code: 'DATABASE_ERROR',
+        error: 'Database error'
       }),
       { status: 500 }
     );
@@ -176,7 +183,8 @@ describe('Organizations Search API Route Handler', () => {
     
     // Should return success with search results
     expect(responseBody).toEqual({
-      success: true,
+      ok: true,
+      message: 'Found 2 organization(s) matching "test clinic"',
       data: [
         { id: 'org-1', name: 'Test Clinic', clinic_id: 'CLINIC-1' },
         { id: 'org-2', name: 'Test Hospital', clinic_id: 'CLINIC-2' }
@@ -197,7 +205,8 @@ describe('Organizations Search API Route Handler', () => {
     
     // Should return success with empty array
     expect(responseBody).toEqual({
-      success: true,
+      ok: true,
+      message: 'Found 0 organization(s) matching "nonexistent"',
       data: []
     });
   });

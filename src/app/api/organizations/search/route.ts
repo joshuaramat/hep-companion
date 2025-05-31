@@ -1,8 +1,6 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@/services/supabase/server';
-import { cookies } from 'next/headers';
-import { z } from 'zod';
 import { logger } from '@/utils/logger';
+import { z } from 'zod';
 import {
   createSuccessResponse,
   createAuthErrorResponse,
@@ -48,8 +46,7 @@ async function handleOrganizationSearch(request: Request) {
   }
   
   // Authentication check
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
   if (authError || !user) {

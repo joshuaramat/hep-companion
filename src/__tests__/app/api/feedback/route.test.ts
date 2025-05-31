@@ -110,7 +110,8 @@ describe('Feedback API Route Handler', () => {
     
     expect(mockJsonFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: 'Authentication required',
+        ok: false,
+        message: 'Authentication required',
         code: 'AUTHENTICATION_ERROR'
       }),
       { status: 401 }
@@ -129,8 +130,10 @@ describe('Feedback API Route Handler', () => {
     // The error will be caught in the main try-catch block
     expect(mockJsonFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: 'An error occurred while saving feedback',
-        code: 'UNEXPECTED_ERROR'
+        ok: false,
+        message: 'An unexpected error occurred',
+        code: 'INTERNAL_SERVER_ERROR',
+        error: 'Invalid JSON in request body'
       }),
       { status: 500 }
     );
@@ -151,9 +154,11 @@ describe('Feedback API Route Handler', () => {
     
     expect(mockJsonFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: 'Required',
-        field: 'prompt_id',
-        code: 'VALIDATION_ERROR'
+        ok: false,
+        message: 'Required',
+        code: 'VALIDATION_ERROR',
+        error: 'Validation failed for field: prompt_id',
+        data: expect.any(Array)
       }),
       { status: 400 }
     );
@@ -180,8 +185,9 @@ describe('Feedback API Route Handler', () => {
     
     expect(mockJsonFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: 'Prompt not found',
-        code: 'RESOURCE_ERROR'
+        ok: false,
+        message: 'Prompt not found',
+        code: 'NOT_FOUND'
       }),
       { status: 404 }
     );
@@ -208,7 +214,8 @@ describe('Feedback API Route Handler', () => {
     
     expect(mockJsonFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: 'Unauthorized access to this prompt',
+        ok: false,
+        message: 'Unauthorized access to this prompt',
         code: 'AUTHORIZATION_ERROR'
       }),
       { status: 403 }
@@ -231,7 +238,8 @@ describe('Feedback API Route Handler', () => {
     const responseBody = response.body;
     
     expect(responseBody).toEqual({
-      success: true,
+      ok: true,
+      message: 'Feedback submitted successfully',
       data: {
         id: expect.any(String),
         prompt_id: '123e4567-e89b-12d3-a456-426614174000',

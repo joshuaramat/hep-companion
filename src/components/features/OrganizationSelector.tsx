@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { debounce } from 'lodash';
 
 type Organization = {
@@ -145,7 +145,7 @@ export default function OrganizationSelector({
                       onClick={handleCreateFromSearch}
                       className="px-4 py-2 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 w-full"
                     >
-                      Create "{query}" as new organization
+                      Create &ldquo;{query}&rdquo; as new organization
                     </button>
                   </div>
                 ) : null}

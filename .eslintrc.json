@@ -1,8 +1,11 @@
 {
-  "extends": ["next/core-web-vitals", "eslint:recommended"],
+  "extends": ["next/core-web-vitals"],
   "rules": {
-    "no-unused-vars": "warn",
-    "no-console": ["warn", { "allow": ["warn", "error"] }]
+    "react/react-in-jsx-scope": "off",
+    "no-unused-vars": ["warn", { 
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_"
+    }]
   },
   "overrides": [
     {

@@ -2,12 +2,33 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import LoadingSuggestions from '@/components/features/LoadingSuggestions';
-import GenerationProgress from '@/components/features/GenerationProgress';
 import { createClient } from '@/services/supabase/client';
 import { useToast } from '@/contexts/toast-context';
-import { useSSE } from '@/hooks/useSSE';
 import dynamic from 'next/dynamic';
+
+// Lazy load heavy components
+const LoadingSuggestions = dynamic(
+  () => import('@/components/features/LoadingSuggestions'),
+  { ssr: false }
+);
+
+const GenerationProgress = dynamic(
+  () => import('@/components/features/GenerationProgress'),
+  { ssr: false }
+);
+
+// Lazy load the SSE hook
+const useSSELazy = () => {
+  const [useSSE, setUseSSE] = useState<any>(null);
+  
+  useEffect(() => {
+    import('@/hooks/useSSE').then(module => {
+      setUseSSE(() => module.useSSE);
+    });
+  }, []);
+  
+  return useSSE;
+};
 
 // Define the props interface for SuggestionsDisplay
 interface SuggestionsDisplayProps {
@@ -21,6 +42,7 @@ interface SuggestionsDisplayProps {
 
 // Dynamically import SuggestionsDisplay to avoid SSR issues
 const SuggestionsDisplay = dynamic<SuggestionsDisplayProps>(
+  // @ts-ignore - Dynamic import path exists
   () => import('@/components/features/SuggestionsDisplay'),
   { 
     ssr: false,
@@ -61,37 +83,40 @@ export default function HomePage() {
   const supabase = createClient();
   const { showToast } = useToast();
 
-  // Use SSE hook
-  const { connect, disconnect, isConnected } = useSSE('/api/generate-stream', {
-    onProgress: (event) => {
-      setProgressEvent(event);
-    },
-    onResult: async (data) => {
-      // Keep the progress modal visible and show complete state
-      setProgressEvent({
-        stage: 'complete',
-        message: 'Exercise generation complete!',
-        progress: 100
-      });
-      
-      // Store the results
-      setGeneratedResults(data);
-      
-      // Add a small delay to show the complete state
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Hide progress and show results
-      setShowProgress(false);
-      setShowResults(true);
-      setIsLoading(false);
-    },
-    onError: (errorMessage, errorCode) => {
-      showToast(errorMessage, 'error');
-      setError(errorMessage);
-      setShowProgress(false);
-      setIsLoading(false);
-    }
-  });
+  // Use SSE hook - conditionally load only when streaming mode is enabled
+  const useSSEModule = useStreamingMode ? require('@/hooks/useSSE') : null;
+  const { connect, disconnect, isConnected: _isConnected } = useStreamingMode && useSSEModule
+    ? useSSEModule.useSSE('/api/generate-stream', {
+        onProgress: (event: ProgressEvent) => {
+          setProgressEvent(event);
+        },
+        onResult: async (data: GeneratedResults) => {
+          // Keep the progress modal visible and show complete state
+          setProgressEvent({
+            stage: 'complete',
+            message: 'Exercise generation complete!',
+            progress: 100
+          });
+          
+          // Store the results
+          setGeneratedResults(data);
+          
+          // Add a small delay to show the complete state
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
+          // Hide progress and show results
+          setShowProgress(false);
+          setShowResults(true);
+          setIsLoading(false);
+        },
+        onError: (errorMessage: string, _errorCode?: string) => {
+          showToast(errorMessage, 'error');
+          setError(errorMessage);
+          setShowProgress(false);
+          setIsLoading(false);
+        }
+      })
+    : { connect: () => {}, disconnect: () => {}, isConnected: false };
 
   // Check if user is authenticated
   useEffect(() => {
@@ -105,7 +130,7 @@ export default function HomePage() {
     };
     
     checkAuth();
-  }, []);
+  }, [router, supabase.auth]);
 
   // Load streaming preference from localStorage
   useEffect(() => {
@@ -424,9 +449,55 @@ export default function HomePage() {
               <button
                 type="submit"
                 disabled={isLoading || !prompt.trim()}
-                className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 px-4 rounded-lg hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                className="group relative w-full inline-flex items-center justify-center gap-3 px-6 py-4 bg-white border-2 border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:border-indigo-300 transition-all duration-300 overflow-hidden hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-sm"
               >
-                Generate Exercise Suggestions
+                {/* Gradient background on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 group-disabled:opacity-0" />
+                
+                {/* Pulse animation ring */}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl opacity-0 group-hover:opacity-20 blur transition-all duration-300 group-hover:animate-pulse group-disabled:opacity-0 group-disabled:animate-none" />
+                
+                {/* Icon with animation */}
+                <div className="relative z-10 flex items-center justify-center w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-md group-hover:scale-110 group-hover:shadow-lg transition-all duration-300 group-disabled:scale-100 group-disabled:shadow-md">
+                  <svg 
+                    className="w-5 h-5 text-white" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M13 10V3L4 14h7v7l9-11h-7z" 
+                    />
+                  </svg>
+                </div>
+                
+                {/* Text content */}
+                <div className="relative z-10 text-left">
+                  <p className="text-lg font-semibold text-gray-900 group-hover:text-indigo-700 transition-colors duration-300">
+                    Generate Exercise Suggestions
+                  </p>
+                  <p className="text-xs text-gray-500 group-hover:text-indigo-600 transition-colors duration-300">
+                    AI-powered recommendations
+                  </p>
+                </div>
+                
+                {/* Arrow icon */}
+                <svg 
+                  className="relative z-10 w-5 h-5 text-gray-400 group-hover:text-indigo-600 transform group-hover:translate-x-1 transition-all duration-300 ml-auto" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M13 7l5 5m0 0l-5 5m5-5H6" 
+                  />
+                </svg>
               </button>
             )}
           </form>

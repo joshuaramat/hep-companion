@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ExerciseSuggestion } from '@/types';
 import ExerciseSuggestionsDisplay from '@/components/features/ExerciseSuggestionsDisplay';
@@ -13,7 +13,7 @@ export default function SuggestionsPage() {
   const prompt = searchParams.get('prompt');
   const suggestionsParam = searchParams.get('suggestions');
   
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [_isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Record<string, { score: number; comment?: string }>>({});
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -34,7 +34,7 @@ export default function SuggestionsPage() {
     };
     
     checkAuth();
-  }, []);
+  }, [router, supabase]);
 
   if (!id || !prompt || !suggestionsParam || !isAuthenticated) {
     // Show loading or redirect
@@ -60,7 +60,7 @@ export default function SuggestionsPage() {
     try {
       // Validate that we have scores for all suggestions
       const suggestionIds = suggestions.map(s => s.id);
-      const feedbackIds = Object.keys(feedback);
+      const _feedbackIds = Object.keys(feedback);
       
       const missingFeedback = suggestionIds.filter(id => {
         const fb = feedback[id];

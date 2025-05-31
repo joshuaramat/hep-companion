@@ -26,7 +26,7 @@ export default function MainHeader() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase.auth]);
   
   const handleLogout = async () => {
     await supabase.auth.signOut();

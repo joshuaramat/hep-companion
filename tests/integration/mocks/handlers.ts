@@ -48,25 +48,29 @@ export const handlers = [
   http.post('https://*.supabase.co/auth/v1/token', async ({ request }) => {
     await delay(200);
     
-    const body = await request.json();
-    // Check if this is a login request
-    if (body.grant_type === 'password') {
-      const { email, password } = body;
-      const user = testUsers.find(u => u.email === email && u.password === password);
-      
-      if (user) {
-        return HttpResponse.json({
-          access_token: 'mock-access-token',
-          refresh_token: 'mock-refresh-token',
-          expires_in: 3600,
-          user
-        });
-      } else {
-        return new HttpResponse(null, {
-          status: 401,
-          statusText: 'Unauthorized'
-        });
+    try {
+      const body = await request.json();
+      // Check if this is a login request
+      if (body && typeof body === 'object' && 'grant_type' in body && body.grant_type === 'password') {
+        const { email, password } = body as { email: string; password: string; grant_type: string };
+        const user = testUsers.find(u => u.email === email && u.password === password);
+        
+        if (user) {
+          return HttpResponse.json({
+            access_token: 'mock-access-token',
+            refresh_token: 'mock-refresh-token',
+            expires_in: 3600,
+            user
+          });
+        } else {
+          return new HttpResponse(null, {
+            status: 401,
+            statusText: 'Unauthorized'
+          });
+        }
       }
+    } catch (error) {
+      // If JSON parsing fails, return default response
     }
     
     // Default success response for other token requests
@@ -124,16 +128,22 @@ export const handlers = [
   }),
   
   http.post('https://*.supabase.co/rest/v1/rpc/search_organizations', async ({ request }) => {
-    const body = await request.json();
-    const searchTerm = body.search_term?.toLowerCase() || '';
-    
-    // Filter organizations based on search term
-    const results = testOrganizations.filter(org => 
-      org.name.toLowerCase().includes(searchTerm) || 
-      org.clinic_id.toLowerCase().includes(searchTerm)
-    );
-    
-    return HttpResponse.json(results);
+    try {
+      const body = await request.json();
+      const searchTerm = (body && typeof body === 'object' && 'search_term' in body) 
+        ? String(body.search_term).toLowerCase() 
+        : '';
+      
+      // Filter organizations based on search term
+      const results = testOrganizations.filter(org => 
+        org.name.toLowerCase().includes(searchTerm) || 
+        org.clinic_id.toLowerCase().includes(searchTerm)
+      );
+      
+      return HttpResponse.json(results);
+    } catch (error) {
+      return HttpResponse.json([]);
+    }
   }),
   
   // Supabase Prompt Storage
@@ -152,7 +162,8 @@ export const handlers = [
     try {
       const body = await request.json();
       // Check minimal validation for prompt
-      if (!body?.prompt || body.prompt.length < 10) {
+      if (!body || typeof body !== 'object' || !('prompt' in body) || 
+          typeof body.prompt !== 'string' || body.prompt.length < 10) {
         return HttpResponse.json(
           { error: 'Invalid prompt', code: 'VALIDATION_ERROR' },
           { status: 400 }
@@ -177,7 +188,8 @@ export const handlers = [
       const body = await request.json();
       
       // Validation
-      if (!body?.prompt || body.prompt.length < 20) {
+      if (!body || typeof body !== 'object' || !('prompt' in body) || 
+          typeof body.prompt !== 'string' || body.prompt.length < 20) {
         const encoder = new TextEncoder();
         const errorEvent = encoder.encode(
           `data: ${JSON.stringify({

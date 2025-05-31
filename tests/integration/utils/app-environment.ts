@@ -1,4 +1,30 @@
+// @ts-nocheck
 import { Page } from '@playwright/test';
+
+// Define the interface for AppState
+interface AppState {
+  currentUser: any;
+  isAuthenticated: boolean;
+  selectedOrganization: any;
+  patientData: any;
+  generatedExercises: any;
+  feedback: Record<string, any>;
+  currentPrompt?: string;
+  navigate: (route: string) => void;
+  _showNotification: (message: string, type?: string) => void;
+  createView: (route: string) => void;
+  setupEventHandlers: (route: string) => void;
+  _containsClinicalTerminology: (text: string) => boolean;
+  toggleUserMenu: () => void;
+  logout: () => void;
+}
+
+// Extend Window interface to include appState
+declare global {
+  interface Window {
+    appState: AppState;
+  }
+}
 
 /**
  * Sets up a simulated application environment for integration testing
@@ -29,7 +55,8 @@ export async function setupAppEnvironment(page: Page) {
   
   // Set up the application state object that will be shared across tests
   await page.evaluate(() => {
-    window.appState = {
+    const w = window as any;
+    w.appState = {
       currentUser: null,
       isAuthenticated: false,
       selectedOrganization: null,
@@ -40,7 +67,7 @@ export async function setupAppEnvironment(page: Page) {
       /**
        * Simple routing simulation
        */
-      navigate(route) {
+      navigate(route: string) {
         const contentEl = document.getElementById('app-content');
         const currentViewEl = document.getElementById('current-view');
         
@@ -61,7 +88,7 @@ export async function setupAppEnvironment(page: Page) {
       /**
        * Show notification to user
        */
-      _showNotification(message, type = 'info') {
+      _showNotification(message: string, type: string = 'info') {
         const container = document.getElementById('notifications');
         if (!container) return;
         

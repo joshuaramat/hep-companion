@@ -143,7 +143,7 @@ export async function getExerciseCountByCondition() {
   }
 
   // Count exercises by condition
-  const counts = data.reduce((acc, exercise) => {
+  const counts = data.reduce((acc, exercise: { condition: ExerciseCondition }) => {
     acc[exercise.condition] = (acc[exercise.condition] || 0) + 1;
     return acc;
   }, {} as Record<ExerciseCondition, number>);

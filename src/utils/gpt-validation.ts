@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Citation, ExerciseSuggestion, GPTResponse } from '@/types/gpt';
+import { ExerciseSuggestion } from '@/types/gpt';
 
 /**
  * Zod schema for validating Citation objects

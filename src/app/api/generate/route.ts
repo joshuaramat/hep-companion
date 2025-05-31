@@ -13,7 +13,9 @@ import {
   createAuthErrorResponse,
   createValidationErrorResponse,
   createServerErrorResponse,
-  createErrorResponse
+  createErrorResponse,
+  createSuccessResponse,
+  withErrorHandling
 } from '@/utils/api-response';
 import { GPTResponseSchema } from '@/lib/schemas/gpt-response';
 import { getExercises } from '@/services/supabase/exercises';
@@ -185,8 +187,7 @@ function validateGPTResponseWithSchema(data: unknown): z.infer<typeof GPTRespons
 
 async function handleGenerate(request: Request) {
   // Check authentication
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
   if (authError || !user) {
@@ -321,7 +322,7 @@ async function handleGenerate(request: Request) {
       });
 
       // Return the response data directly
-      return NextResponse.json(responseData);
+      return createSuccessResponse(responseData, 'Exercise suggestions generated successfully');
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       
@@ -379,6 +380,4 @@ async function handleGenerate(request: Request) {
   );
 }
 
-export async function POST(request: Request) {
-  return handleGenerate(request);
-} 
+export const POST = withErrorHandling(handleGenerate); 

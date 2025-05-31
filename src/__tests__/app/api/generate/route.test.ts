@@ -60,22 +60,20 @@ const mockOpenAICreate = jest.fn().mockResolvedValue({
   choices: [
     {
       message: {
-        content: JSON.stringify([
-          {
-            exercise_name: 'Test Exercise',
-            sets: 3,
-            reps: 10,
-            frequency: '3 times per week',
-            citations: [{
-              title: 'Test Title',
-              authors: 'Test Author',
-              journal: 'Test Journal',
-              year: '2023',
-              doi: '10.1234/test',
-              url: 'https://example.com'
-            }]
-          }
-        ])
+        content: JSON.stringify({
+          exercises: [
+            {
+              name: 'Test Exercise',
+              sets: 3,
+              reps: '10-12',
+              notes: 'Test notes',
+              evidence_source: 'Test Journal, 2023'
+            }
+          ],
+          clinical_notes: 'Test clinical reasoning',
+          citations: ['Test Journal, 2023'],
+          confidence_level: 'high'
+        })
       }
     }
   ]
@@ -199,7 +197,8 @@ describe('Generate API Route Handler', () => {
     
     expect(mockNextResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: 'Authentication required',
+        ok: false,
+        message: 'Authentication required',
         code: 'AUTHENTICATION_ERROR'
       }),
       { status: 401 }
@@ -217,10 +216,12 @@ describe('Generate API Route Handler', () => {
     
     expect(mockNextResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: expect.any(String),
-        code: expect.stringMatching(/UNEXPECTED_ERROR|INPUT_VALIDATION_ERROR/)
+        ok: false,
+        message: 'An unexpected error occurred',
+        code: 'INTERNAL_SERVER_ERROR',
+        error: 'Invalid JSON in request body'
       }),
-      expect.objectContaining({ status: expect.any(Number) })
+      { status: 500 }
     );
   });
   
@@ -235,8 +236,11 @@ describe('Generate API Route Handler', () => {
     
     expect(mockNextResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: expect.stringContaining('at least 20 characters'),
-        code: 'INPUT_VALIDATION_ERROR'
+        ok: false,
+        message: expect.stringContaining('at least 20 characters'),
+        code: 'VALIDATION_ERROR',
+        error: 'Validation failed for field: prompt',
+        data: expect.any(Array)
       }),
       { status: 400 }
     );
@@ -261,8 +265,9 @@ describe('Generate API Route Handler', () => {
     
     expect(mockNextResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: 'Please include specific clinical terms and patient details',
-        code: 'INPUT_VALIDATION_ERROR'
+        ok: false,
+        message: 'Please include specific clinical terms and patient details',
+        code: 'VALIDATION_ERROR'
       }),
       { status: 400 }
     );
@@ -303,16 +308,24 @@ describe('Generate API Route Handler', () => {
     const responseBody = response.body;
     
     expect(responseBody).toEqual({
-      id: expect.any(String),
-      suggestions: expect.arrayContaining([
-        expect.objectContaining({
-          exercise_name: 'Test Exercise',
-          sets: 3,
-          reps: 10,
-          frequency: '3 times per week',
-          id: expect.any(String)
-        })
-      ])
+      ok: true,
+      message: 'Exercise suggestions generated successfully',
+      data: expect.objectContaining({
+        id: expect.any(String),
+        exercises: expect.arrayContaining([
+          expect.objectContaining({
+            name: 'Test Exercise',
+            sets: 3,
+            reps: '10-12',
+            notes: 'Test notes',
+            evidence_source: 'Test Journal, 2023',
+            id: expect.any(String)
+          })
+        ]),
+        clinical_notes: 'Test clinical reasoning',
+        citations: ['Test Journal, 2023'],
+        confidence_level: 'high'
+      })
     });
     
     expect(mockLogAudit).toHaveBeenCalledWith(
@@ -321,7 +334,8 @@ describe('Generate API Route Handler', () => {
       expect.any(String),
       expect.objectContaining({
         has_patient_key: false,
-        suggestions_count: 1
+        exercises_count: 1,
+        confidence_level: 'high'
       })
     );
   });
