@@ -105,12 +105,10 @@ export function createServerErrorResponse(
 }
 
 // Helper to wrap async API handlers with error catching
-export function withErrorHandling<T extends any[], R>(
-  handler: (...args: T) => Promise<NextResponse<ApiResponse<R>>>
-) {
-  return async (...args: T): Promise<NextResponse<ApiResponse<R>>> => {
+export const withErrorHandling = (handler: Function) => {
+  return async (..._args: any[]) => {
     try {
-      return await handler(...args);
+      return await handler(..._args);
     } catch (error) {
       logger.error('Unhandled API error:', error);
       
@@ -118,7 +116,7 @@ export function withErrorHandling<T extends any[], R>(
       return createServerErrorResponse(
         'An unexpected error occurred',
         message
-      ) as NextResponse<ApiResponse<R>>;
+      ) as NextResponse<ApiResponse<any>>;
     }
   };
 } 

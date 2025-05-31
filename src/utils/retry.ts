@@ -14,8 +14,8 @@ export const BASE_DELAY = 1000;
 export class OpenAIAPIError extends Error {
   constructor(
     message: string,
-    public status?: number,
-    public retryable: boolean = false
+    public _status: number,
+    public _retryable: boolean = false
   ) {
     super(message);
     this.name = 'OpenAIAPIError';
@@ -39,7 +39,7 @@ export async function retryWithExponentialBackoff<T>(
     return await fn();
   } catch (error) {
     // Check if we should retry
-    const isRetryable = error instanceof OpenAIAPIError && error.retryable;
+    const isRetryable = error instanceof OpenAIAPIError && error._retryable;
     
     if (retries <= 0 || !isRetryable) {
       throw error;
