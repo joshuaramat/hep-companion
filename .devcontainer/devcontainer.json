@@ -1,0 +1,41 @@
+{
+  "name": "HEP Companion Development",
+  "dockerComposeFile": [
+    "../docker/docker-compose.yml",
+    "../docker/docker-compose.dev.yml"
+  ],
+  "service": "tools",
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens",
+        "ms-vsliveshare.vsliveshare",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "grafana.vscode-grafana",
+        "prometheus.prometheus"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": true
+        },
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "typescript.enablePromptUseWorkspaceTsdk": true,
+        "docker.defaultPlatform": "linux/amd64"
+      }
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "postCreateCommand": "npm install",
+  "remoteUser": "node"
+} 

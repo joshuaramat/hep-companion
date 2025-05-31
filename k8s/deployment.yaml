@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hep-companion
+  labels:
+    app: hep-companion
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hep-companion
+  template:
+    metadata:
+      labels:
+        app: hep-companion
+    spec:
+      containers:
+      - name: app
+        image: ghcr.io/${GITHUB_REPOSITORY:-hep-companion}:${TAG:-latest}
+        ports:
+        - containerPort: 3000
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: NEXT_PUBLIC_SUPABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: hep-companion-secrets
+              key: supabase-url
+        - name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+          valueFrom:
+            secretKeyRef:
+              name: hep-companion-secrets
+              key: supabase-anon-key
+        - name: SUPABASE_SERVICE_ROLE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: hep-companion-secrets
+              key: supabase-service-role-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hep-companion
+spec:
+  selector:
+    app: hep-companion
+  ports:
+  - port: 80
+    targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hep-companion
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - hep-companion.example.com
+    secretName: hep-companion-tls
+  rules:
+  - host: hep-companion.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: hep-companion
+            port:
+              number: 80 

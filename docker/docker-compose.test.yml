@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hep_companion_test
+    ports:
+      - "5433:5432"  # Different port from development
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./docker/init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  jest:
+    build:
+      context: .
+      target: test
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./coverage:/app/coverage
+    environment:
+      - NODE_ENV=test
+      - DATABASE_URL=postgresql://postgres:postgres@postgres-test:5432/hep_companion_test
+      - JEST_WORKERS=4
+      - COVERAGE_DIRECTORY=coverage
+      - COVERAGE_REPORTERS=text,lcov,html
+      - JEST_TIMEOUT=30000
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    command: npm run test:watch
+
+  playwright:
+    build:
+      context: .
+      target: test
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
+    environment:
+      - NODE_ENV=test
+      - DATABASE_URL=postgresql://postgres:postgres@postgres-test:5432/hep_companion_test
+      - PLAYWRIGHT_HEADLESS=true
+      - PLAYWRIGHT_VIDEO_RETENTION=on-first-retry
+      - PLAYWRIGHT_TIMEOUT=30000
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    command: npm run test:e2e
+
+volumes:
+  postgres_test_data: 

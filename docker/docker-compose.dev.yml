@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  tools:
+    build:
+      context: .
+      dockerfile: Dockerfile.tools
+    volumes:
+      - .:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "9229:9229"  # Node.js debugger
+      - "3001:3001"  # Performance profiler
+    profiles:
+      - dev-tools
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    volumes:
+      - ./docker/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3002:3000"
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+  loki:
+    image: grafana/loki:2.9.0
+    volumes:
+      - ./docker/loki:/etc/loki
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    ports:
+      - "3100:3100"
+    profiles:
+      - monitoring
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    volumes:
+      - ./docker/promtail:/etc/promtail
+      - /var/log:/var/log
+    command: -config.file=/etc/promtail/promtail-config.yaml
+    depends_on:
+      - loki
+    profiles:
+      - monitoring
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data: 

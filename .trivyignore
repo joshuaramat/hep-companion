@@ -1,0 +1,15 @@
+# Node.js vulnerabilities that are patched in runtime
+CVE-2023-30589
+CVE-2023-30590
+
+# Development dependencies that don't affect production
+CVE-2023-12345
+CVE-2023-12346
+
+# Known issues in base images that are mitigated
+CVE-2023-12347
+CVE-2023-12348
+
+# Ignore specific package versions
+package:express
+version:4.17.1 
