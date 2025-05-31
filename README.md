@@ -1,12 +1,22 @@
 # HEP Companion
 
+[![CI](https://github.com/joshuaramat/hep-companion/actions/workflows/ci.yml/badge.svg)](https://github.com/joshuaramat/hep-companion/actions/workflows/ci.yml)
+[![Docker CD](https://github.com/joshuaramat/hep-companion/actions/workflows/docker-cd.yml/badge.svg)](https://github.com/joshuaramat/hep-companion/actions/workflows/docker-cd.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A Healthcare Exercise Prescription system designed for clinicians to generate evidence-based exercise recommendations with AI assistance.
 
-## Quick Start
+## Documentation
 
-This project uses Next.js 14, TypeScript, Supabase, and Tailwind CSS. For detailed documentation, setup instructions, and development guides, please refer to:
+For comprehensive documentation, please refer to:
 
-**[Development Documentation](./docs/development/)**
+**[Documentation Index](./docs/)**
+
+### Quick Links
+- [Getting Started](./docs/development/getting-started.md)
+- [Architecture Overview](./docs/architecture/)
+- [DevOps Guide](./docs/devops/)
+- [User Guides](./docs/user-guides/)
 
 ## Key Features
 
@@ -74,7 +84,7 @@ make profile cmd="npm run dev"
 make logs
 ```
 
-For detailed development setup and workflow, see [Developer Onboarding Guide](./docs/development/onboarding.md).
+For detailed development setup and workflow, see [Getting Started Guide](./docs/development/getting-started.md).
 
 ## Development
 
@@ -115,58 +125,43 @@ When using Docker, you get a complete local development environment:
 - **Supabase Studio** - Database UI on http://localhost:3002
 - **Mailhog** - Email testing UI on http://localhost:8025
 
-> **Note**: The Docker setup uses a simplified Supabase stack optimized for this application's needs. It includes only the essential services: database, auth, and studio. For details on the architectural decision and recent review findings, see [Docker Review Summary](./docs/development/docker-review-summary.md) and [Comprehensive Review](./docs/development/docker-review-comprehensive.md).
+> **Note**: The Docker setup uses a simplified Supabase stack optimized for this application's needs. For details, see [Docker Documentation](./docs/docker/).
 
-For comprehensive setup, architecture, and contribution guidelines, see the [Development Documentation](./docs/development/).
+## CI/CD and DevOps
 
-## CI/CD Pipeline
+The project implements modern DevOps practices with automated CI/CD pipelines. For comprehensive documentation, see:
 
-The project uses GitHub Actions for continuous integration and deployment:
+**[DevOps Documentation](./docs/devops/)**
 
-### Build Pipeline
-- Automated builds on push to main and pull requests
-- Multi-platform support (amd64, arm64)
-- Docker layer caching for faster builds
-- Security scanning with Trivy and CodeQL
+### Key Components
 
-### Test Pipeline
-- Unit tests with Jest
-- Integration tests with Playwright
-- Code coverage reporting
-- Test results artifacts
+- **Continuous Integration**: Automated testing, linting, and security scanning on all pull requests
+- **Continuous Deployment**: Automated Docker builds and deployments to staging/production
+- **Backup Strategy**: Daily automated backups with disaster recovery procedures
+- **Monitoring**: Prometheus, Grafana, and Loki for observability
 
-### Deployment
-- Production deployment with Docker Compose
-- Kubernetes deployment support
-- Automated rollbacks
-- Health checks and monitoring
-
-### Security
-- Weekly vulnerability scans
-- SAST scanning with CodeQL
-- Container scanning with Trivy
-- Secret management
-
-### Usage
+### Quick Commands
 
 ```bash
-# Build and publish Docker image
-npm run docker:publish
+# View CI/CD status
+gh run list --workflow=ci.yml
 
 # Deploy to production
-npm run docker:deploy
+git tag -a v1.2.3 -m "Release v1.2.3"
+git push origin v1.2.3
 
-# Rollback deployment
-npm run docker:deploy:rollback
+# Manual backup
+gh workflow run backup.yml
 
-# Security scanning
-npm run docker:security:scan
-
-# View production logs
-npm run docker:logs:prod
+# View logs
+docker-compose -f docker-compose.production.yml logs
 ```
 
-For detailed CI/CD documentation, see [CI/CD Guide](./docs/development/ci-cd.md).
+For detailed information, see:
+- [CI/CD Guide](./docs/devops/ci-cd-guide.md)
+- [Workflow Management](./docs/devops/workflow-management.md)
+- [Backup and Disaster Recovery](./docs/devops/backup-disaster-recovery.md)
+- [Quick Reference](./docs/devops/quick-reference.md)
 
 ## License
 

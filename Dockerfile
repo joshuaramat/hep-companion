@@ -1,5 +1,8 @@
+# Build arguments
+ARG NODE_VERSION=20
+
 # Development stage
-FROM node:20-alpine AS development
+FROM node:${NODE_VERSION}-alpine AS development
 
 # Install dependencies for health checks
 RUN apk add --no-cache curl
@@ -35,7 +38,7 @@ COPY . .
 CMD ["npm", "run", "test:all"]
 
 # Dependencies stage (for production)
-FROM node:20-alpine AS deps
+FROM node:${NODE_VERSION}-alpine AS deps
 
 WORKDIR /app
 
@@ -44,7 +47,7 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # Builder stage
-FROM node:20-alpine AS builder
+FROM node:${NODE_VERSION}-alpine AS builder
 
 WORKDIR /app
 
@@ -60,7 +63,7 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine AS production
+FROM node:${NODE_VERSION}-alpine AS production
 
 # Install curl for health checks
 RUN apk add --no-cache curl
