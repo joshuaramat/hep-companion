@@ -223,23 +223,90 @@ export default function HomePage() {
   if (showResults && generatedResults) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto pt-16 px-4">
-          <div className="mb-4">
+        {/* Add subtle pattern background */}
+        <div className="fixed inset-0 bg-gray-50 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/20 via-transparent to-purple-50/20" />
+        </div>
+        
+        <div className="max-w-4xl mx-auto pt-16 px-4 pb-16">
+          {/* New Generation Button Section */}
+          <div className="mt-10 mb-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
             <button
               onClick={handleNewGeneration}
-              className="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-2"
+              className="group relative inline-flex items-center gap-3 px-6 py-3.5 bg-white border-2 border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:border-indigo-300 transition-all duration-300 overflow-hidden hover:-translate-y-0.5"
             >
-              ← Generate New Exercises
+              {/* Gradient background on hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              {/* Pulse animation ring */}
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl opacity-0 group-hover:opacity-20 blur transition-all duration-300 group-hover:animate-pulse" />
+              
+              {/* Icon with animation */}
+              <div className="relative z-10 flex items-center justify-center w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-md group-hover:scale-110 group-hover:shadow-lg transition-all duration-300">
+                <svg 
+                  className="w-5 h-5 text-white transform group-hover:rotate-180 transition-transform duration-500" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                  />
+                </svg>
+              </div>
+              
+              {/* Text content */}
+              <div className="relative z-10 text-left">
+                <p className="text-base font-semibold text-gray-900 group-hover:text-indigo-700 transition-colors duration-300">
+                  Generate New Exercises
+                </p>
+                <p className="text-xs text-gray-500 group-hover:text-indigo-600 transition-colors duration-300">
+                  Start a fresh generation
+                </p>
+              </div>
+              
+              {/* Arrow icon */}
+              <svg 
+                className="relative z-10 w-5 h-5 text-gray-400 group-hover:text-indigo-600 transform group-hover:translate-x-1 transition-all duration-300 ml-2" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M13 7l5 5m0 0l-5 5m5-5H6" 
+                />
+              </svg>
             </button>
+            
+            {/* Success indicator with fade-in animation */}
+            <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-4 py-2 rounded-lg border border-green-200 animate-fade-in-up">
+              <div className="animate-bounce-gentle">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <span className="font-medium">Generation Complete</span>
+              <span className="text-xs text-green-500">• Just now</span>
+            </div>
           </div>
-          <SuggestionsDisplay
-            promptId={generatedResults.id}
-            prompt={prompt}
-            suggestions={generatedResults.exercises}
-            clinicalNotes={generatedResults.clinical_notes}
-            citations={generatedResults.citations}
-            confidenceLevel={generatedResults.confidence_level}
-          />
+          
+          {/* Results section with subtle animation */}
+          <div className="animate-fade-in-up animation-delay-200">
+            <SuggestionsDisplay
+              promptId={generatedResults.id}
+              prompt={prompt}
+              suggestions={generatedResults.exercises}
+              clinicalNotes={generatedResults.clinical_notes}
+              citations={generatedResults.citations}
+              confidenceLevel={generatedResults.confidence_level}
+            />
+          </div>
         </div>
       </div>
     );

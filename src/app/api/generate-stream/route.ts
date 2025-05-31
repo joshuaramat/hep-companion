@@ -329,7 +329,7 @@ export async function POST(request: NextRequest) {
           
           sendSSEEvent(encoder, controller, {
             stage: 'generating',
-            message: 'Analyzing your clinical scenario...',
+            message: 'Analyzing your clinical scenario',
             progress: currentProgress,
             estimatedTimeRemaining: Math.max(0, totalEstimatedTime - fetchDuration - elapsed - 100)
           });

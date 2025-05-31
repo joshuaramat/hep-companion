@@ -30,13 +30,13 @@ export default function SuggestionsDisplay({
   const getConfidenceColor = (level?: string) => {
     switch (level?.toLowerCase()) {
       case 'high':
-        return 'text-green-600 bg-green-50 border-green-200';
+        return 'text-green-700 bg-green-50/70 border-green-300';
       case 'medium':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+        return 'text-yellow-700 bg-yellow-50/70 border-yellow-300';
       case 'low':
-        return 'text-red-600 bg-red-50 border-red-200';
+        return 'text-orange-700 bg-orange-50/70 border-orange-300';
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return 'text-gray-600 bg-gray-50/70 border-gray-300';
     }
   };
 
@@ -48,21 +48,42 @@ export default function SuggestionsDisplay({
         <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">{prompt}</p>
       </div>
 
-      {/* AI Confidence Level */}
-      {confidenceLevel && (
-        <div className={`mb-6 p-4 rounded-lg border ${getConfidenceColor(confidenceLevel)}`}>
-          <div className="flex items-center gap-2">
-            <span className="font-medium">AI Confidence Level:</span>
-            <span className="capitalize">{confidenceLevel}</span>
-          </div>
-        </div>
-      )}
-
       {/* Clinical Notes */}
       {clinicalNotes && (
         <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">Clinical Reasoning</h3>
+          <div className="flex items-start justify-between mb-3">
+            <h3 className="text-lg font-semibold text-gray-800">Clinical Reasoning</h3>
+            {/* AI Confidence Level - now smaller and integrated */}
+            {confidenceLevel && (
+              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${getConfidenceColor(confidenceLevel)}`}>
+                <svg 
+                  className="w-3.5 h-3.5" 
+                  fill="currentColor" 
+                  viewBox="0 0 20 20"
+                >
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="capitalize">{confidenceLevel} AI confidence</span>
+              </div>
+            )}
+          </div>
           <p className="text-gray-600 leading-relaxed">{clinicalNotes}</p>
+        </div>
+      )}
+
+      {/* Clinical Notes without confidence level (when no clinical notes but confidence exists) */}
+      {!clinicalNotes && confidenceLevel && (
+        <div className="mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${getConfidenceColor(confidenceLevel)}`}>
+            <svg 
+              className="w-3.5 h-3.5" 
+              fill="currentColor" 
+              viewBox="0 0 20 20"
+            >
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span>AI Confidence: <span className="capitalize">{confidenceLevel}</span></span>
+          </div>
         </div>
       )}
 

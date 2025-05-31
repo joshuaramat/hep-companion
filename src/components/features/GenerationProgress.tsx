@@ -200,7 +200,7 @@ export default function GenerationProgress({ progressEvent, onCancel }: Generati
           </p>
           {currentStage === 'generating' && (
             <p className="text-xs text-gray-500 mt-2 animate-pulse">
-              Analyzing clinical scenario with GPT-4...
+              Analyzing clinical scenario with GPT-4
             </p>
           )}
         </div>
