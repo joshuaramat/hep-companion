@@ -61,7 +61,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
           cache: 'npm'
       
       - name: Install dependencies
@@ -81,7 +81,7 @@ jobs:
     if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true'
     strategy:
       matrix:
-        node-version: [20.x]
+        node-version: [18.x]
     steps:
       - uses: actions/checkout@v4
       
@@ -99,7 +99,7 @@ jobs:
       
       - name: Upload coverage
         uses: codecov/codecov-action@v4
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '18.x'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage/lcov.info
@@ -117,7 +117,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
           cache: 'npm'
       
       - name: Install dependencies
@@ -174,7 +174,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
           cache: 'npm'
       
       - name: Install dependencies
@@ -222,7 +222,7 @@ jobs:
         run: |
           # Check if any required job failed
           if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
-            echo "❌ One or more CI jobs failed"
+            echo "One or more CI jobs failed"
             exit 1
           fi
           
@@ -230,7 +230,7 @@ jobs:
           if [[ "${{ needs.lint-and-type-check.result }}" == "skipped" && \
                 "${{ needs.unit-tests.result }}" == "skipped" && \
                 "${{ needs.build.result }}" == "skipped" ]]; then
-            echo "✅ No code changes detected, skipping CI"
+            echo "No code changes detected, skipping CI"
           else
-            echo "✅ All CI jobs passed successfully!"
+            echo "All CI jobs passed successfully!"
           fi 
