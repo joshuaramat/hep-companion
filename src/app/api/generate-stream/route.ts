@@ -238,10 +238,10 @@ export async function POST(request: NextRequest) {
   
   const stream = new ReadableStream({
     async start(controller) {
-      const cookieStore = cookies();
+      const _cookieStore = cookies();
       const supabase = await createClient();
       const startTime = Date.now();
-      let lastStageTime = startTime;
+      let _lastStageTime = startTime;
       
       try {
         // Authentication check
@@ -478,7 +478,7 @@ export async function POST(request: NextRequest) {
         
         if (error instanceof GPTValidationError) {
           errorMessage = error.message;
-          errorCode = error.code || 'VALIDATION_ERROR';
+          errorCode = error._code || 'VALIDATION_ERROR';
         } else if (error instanceof OpenAIAPIError) {
           errorMessage = 'There was a problem connecting to our AI service';
           errorCode = 'OPENAI_API_ERROR';

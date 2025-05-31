@@ -1,12 +1,10 @@
-import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
-import { GPTValidationError, ValidationErrorType } from '@/utils/gpt-validation';
+import { GPTValidationError } from '@/utils/gpt-validation';
 import { retryWithExponentialBackoff, OpenAIAPIError } from '@/utils/retry';
 import { z } from 'zod';
 import { validateClinicalInput } from '@/services/utils/validation';
 import { logger } from '../../../utils/logger';
 import { createClient } from '@/services/supabase/server';
-import { cookies } from 'next/headers';
 import { generatePatientKey } from '@/utils/patient-key';
 import { logAudit } from '@/services/audit';
 import {
@@ -297,7 +295,7 @@ async function handleGenerate(request: Request) {
       logger.info(`Successfully processed suggestions: ${suggestionId}`);
       
       // Store the result in the database with user_id and patient_key
-      const { data: promptData, error: insertError } = await supabase
+      const { data: _promptData, error: insertError } = await supabase
         .from('prompts')
         .insert({
           id: suggestionId,
@@ -328,8 +326,8 @@ async function handleGenerate(request: Request) {
       
       // If this is a validation error that can't be fixed by retrying, break immediately
       if (error instanceof GPTValidationError && 
-          error.code !== 'PARSE_ERROR' && 
-          error.code !== 'EMPTY_RESPONSE') {
+          error._code !== 'PARSE_ERROR' && 
+          error._code !== 'EMPTY_RESPONSE') {
         break;
       }
       
@@ -351,15 +349,15 @@ async function handleGenerate(request: Request) {
     return createErrorResponse(
       lastError.message,
       400,
-      lastError.code || 'VALIDATION_ERROR',
-      JSON.stringify(lastError.details)
+      lastError._code || 'VALIDATION_ERROR',
+      JSON.stringify(lastError._details)
     );
   }
   
   if (lastError instanceof OpenAIAPIError) {
     return createErrorResponse(
       'There was a problem connecting to our AI service',
-      lastError.status || 500,
+      lastError._status || 500,
       'OPENAI_API_ERROR',
       lastError.message
     );
