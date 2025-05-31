@@ -18,6 +18,40 @@ EXPOSE 3000
 # Development command
 CMD ["npm", "run", "dev"]
 
+# Test stage
+FROM node:20-alpine AS test
+
+# Install dependencies for Playwright
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    nodejs \
+    yarn
+
+# Set environment variables for Playwright
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+RUN npm ci
+
+# Copy the rest of the application
+COPY . .
+
+# Install Playwright browsers
+RUN npx playwright install --with-deps chromium
+
+# Test command (can be overridden)
+CMD ["npm", "run", "test:all"]
+
 # Dependencies stage (for production)
 FROM node:20-alpine AS deps
 

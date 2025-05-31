@@ -57,6 +57,55 @@ When using Docker, you get a complete local development environment:
 
 For comprehensive setup, architecture, and contribution guidelines, see the [Development Documentation](./docs/development/).
 
+## CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration and deployment:
+
+### Build Pipeline
+- Automated builds on push to main and pull requests
+- Multi-platform support (amd64, arm64)
+- Docker layer caching for faster builds
+- Security scanning with Trivy and CodeQL
+
+### Test Pipeline
+- Unit tests with Jest
+- Integration tests with Playwright
+- Code coverage reporting
+- Test results artifacts
+
+### Deployment
+- Production deployment with Docker Compose
+- Kubernetes deployment support
+- Automated rollbacks
+- Health checks and monitoring
+
+### Security
+- Weekly vulnerability scans
+- SAST scanning with CodeQL
+- Container scanning with Trivy
+- Secret management
+
+### Usage
+
+```bash
+# Build and publish Docker image
+npm run docker:publish
+
+# Deploy to production
+npm run docker:deploy
+
+# Rollback deployment
+npm run docker:deploy:rollback
+
+# Security scanning
+npm run docker:security:scan
+
+# View production logs
+npm run docker:logs:prod
+```
+
+For detailed CI/CD documentation, see [CI/CD Guide](./docs/development/ci-cd.md).
+
 ## License
 
 This project is licensed under the MIT License. 

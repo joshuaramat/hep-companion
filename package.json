@@ -44,7 +44,21 @@
     "docker:ps": "docker-compose --env-file .env.docker ps",
     "docker:logs": "docker-compose --env-file .env.docker logs -f",
     "docker:clean": "docker-compose --env-file .env.docker down -v --remove-orphans",
-    "docker:test": "node docker/test-connection.js"
+    "docker:test": "node docker/test-connection.js",
+    "docker:test:unit": "docker-compose -f docker-compose.test.yml run --rm jest npm run test",
+    "docker:test:integration": "docker-compose -f docker-compose.test.yml run --rm playwright npm run test:e2e",
+    "docker:test:all": "docker-compose -f docker-compose.test.yml run --rm jest npm run test && docker-compose -f docker-compose.test.yml run --rm playwright npm run test:e2e",
+    "docker:test:watch": "docker-compose -f docker-compose.test.yml run --rm jest npm run test:watch",
+    "docker:test:coverage": "docker-compose -f docker-compose.test.yml run --rm jest npm run test:coverage",
+    "docker:test:clean": "docker-compose -f docker-compose.test.yml down -v",
+    "docker:publish": "docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/${GITHUB_REPOSITORY:-hep-companion}:${TAG:-latest} --push .",
+    "docker:deploy": "docker-compose -f docker-compose.production.yml up -d",
+    "docker:deploy:rollback": "docker-compose -f docker-compose.production.yml up -d --force-recreate app",
+    "docker:security:scan": "trivy image ghcr.io/${GITHUB_REPOSITORY:-hep-companion}:${TAG:-latest}",
+    "docker:security:scan:fix": "trivy image --fix ghcr.io/${GITHUB_REPOSITORY:-hep-companion}:${TAG:-latest}",
+    "docker:logs:prod": "docker-compose -f docker-compose.production.yml logs -f",
+    "docker:ps:prod": "docker-compose -f docker-compose.production.yml ps",
+    "docker:clean:prod": "docker-compose -f docker-compose.production.yml down -v --remove-orphans"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
