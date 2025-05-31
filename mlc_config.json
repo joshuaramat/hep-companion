@@ -1,0 +1,66 @@
+{
+  "timeout": "10s",
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackRetryDelay": "30s",
+  "aliveStatusCodes": [200, 206, 301, 302, 307],
+  "ignorePatterns": [
+    {
+      "pattern": "^http://localhost"
+    },
+    {
+      "pattern": "^https://localhost"
+    },
+    {
+      "pattern": "^http://127.0.0.1"
+    },
+    {
+      "pattern": "^https://127.0.0.1"
+    },
+    {
+      "pattern": "^http://app:"
+    },
+    {
+      "pattern": "^http://kong:"
+    },
+    {
+      "pattern": "^http://postgrest:"
+    },
+    {
+      "pattern": "^http://auth:"
+    },
+    {
+      "pattern": "^http://realtime:"
+    },
+    {
+      "pattern": "^http://storage:"
+    },
+    {
+      "pattern": "^http://studio:"
+    },
+    {
+      "pattern": "^http://mailhog:"
+    },
+    {
+      "pattern": "^https://hep-companion.com"
+    },
+    {
+      "pattern": "^https://staging.hep-companion.com"
+    }
+  ],
+  "replacementPatterns": [
+    {
+      "pattern": "^/",
+      "replacement": "{{BASEURL}}/"
+    }
+  ],
+  "httpHeaders": [
+    {
+      "urls": ["https://github.com"],
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+      }
+    }
+  ]
+} 

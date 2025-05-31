@@ -127,6 +127,12 @@ jobs:
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
+          # CI-specific environment variables for build validation
+          NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co'
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key'
+          OPENAI_API_KEY: 'test-api-key'
+          SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key'
+          FAIL_ON_ENV_ERROR: 'false'
       
       - name: Check bundle size
         uses: preactjs/compressed-size-action@v2
@@ -187,6 +193,12 @@ jobs:
         run: npm run test:integration
         env:
           CI: true
+          # Test environment variables for integration tests
+          NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co'
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key'
+          OPENAI_API_KEY: 'test-api-key'
+          SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key'
+          FAIL_ON_ENV_ERROR: 'false'
       
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
