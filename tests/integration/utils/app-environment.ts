@@ -1,30 +1,4 @@
-// @ts-nocheck
 import { Page } from '@playwright/test';
-
-// Define the interface for AppState
-interface AppState {
-  currentUser: any;
-  isAuthenticated: boolean;
-  selectedOrganization: any;
-  patientData: any;
-  generatedExercises: any;
-  feedback: Record<string, any>;
-  currentPrompt?: string;
-  navigate: (route: string) => void;
-  _showNotification: (message: string, type?: string) => void;
-  createView: (route: string) => void;
-  setupEventHandlers: (route: string) => void;
-  _containsClinicalTerminology: (text: string) => boolean;
-  toggleUserMenu: () => void;
-  logout: () => void;
-}
-
-// Extend Window interface to include appState
-declare global {
-  interface Window {
-    appState: AppState;
-  }
-}
 
 /**
  * Sets up a simulated application environment for integration testing
@@ -63,6 +37,33 @@ export async function setupAppEnvironment(page: Page) {
       patientData: null,
       generatedExercises: null,
       feedback: {},
+      
+      // Simulate user profile data like the real app
+      userProfile: {
+        id: null,
+        clinic_id: null,
+        organization: null,
+        full_name: null,
+        profession: null
+      },
+      
+      /**
+       * Simulate profile loading like the real application
+       */
+      loadUserProfile: async function() {
+        // Simulate loading user profile with organization data
+        if (this.isAuthenticated && this.currentUser) {
+          // In real app, this would load from Supabase
+          // Here we simulate the profile data
+          this.userProfile = {
+            id: this.currentUser.id,
+            clinic_id: this.selectedOrganization?.clinic_id || null,
+            organization: this.selectedOrganization?.name || null,
+            full_name: this.currentUser.email?.split('@')[0] || 'Test User',
+            profession: 'physical_therapist'
+          };
+        }
+      },
       
       /**
        * Simple routing simulation
@@ -108,7 +109,7 @@ export async function setupAppEnvironment(page: Page) {
       /**
        * Create DOM for specific views
        */
-      createView(route) {
+      createView(route: string) {
         const contentEl = document.getElementById('app-content');
         if (!contentEl) return;
         
@@ -168,7 +169,7 @@ export async function setupAppEnvironment(page: Page) {
                   </div>
                   <div class="form-group">
                     <label for="clinic_id">Clinic ID</label>
-                    <input id="clinic_id" name="clinic_id" placeholder="Clinic ID" data-testid="clinic-id-input">
+                    <input id="clinic_id" name="clinic_id" placeholder="Clinic ID" data-testid="clinic-id-input" value="${this.userProfile?.clinic_id || this.selectedOrganization?.clinic_id || ''}">
                   </div>
                   <button type="submit" data-testid="generate-button">Generate</button>
                   <div data-testid="error-message" class="error-message" style="display:none"></div>
@@ -255,7 +256,7 @@ export async function setupAppEnvironment(page: Page) {
       /**
        * Set up event listeners for the current view
        */
-      setupEventHandlers(route) {
+      setupEventHandlers(route: string) {
         const contentEl = document.getElementById('app-content');
         if (!contentEl) return;
         
@@ -272,7 +273,7 @@ export async function setupAppEnvironment(page: Page) {
         switch(route) {
           case 'login':
             const loginForm = contentEl.querySelector('#login-form');
-            loginForm?.addEventListener('submit', (e) => {
+            loginForm?.addEventListener('submit', async (e) => {
               e.preventDefault();
               const email = (loginForm.querySelector('input[name="email"]') as HTMLInputElement)?.value;
               const password = (loginForm.querySelector('input[name="password"]') as HTMLInputElement)?.value;
@@ -281,10 +282,14 @@ export async function setupAppEnvironment(page: Page) {
               if (email === 'test@example.com' && password === 'password123') {
                 this.isAuthenticated = true;
                 this.currentUser = { id: 'test-user-id', email };
+                
+                // Load user profile after authentication (simulating real app behavior)
+                await this.loadUserProfile();
+                
                 this._showNotification('Login successful', 'success');
                 this.navigate('dashboard');
               } else {
-                const errorEl = loginForm.querySelector('#login-error');
+                const errorEl = loginForm.querySelector('#login-error') as HTMLElement;
                 if (errorEl) {
                   errorEl.textContent = 'Invalid login credentials';
                   errorEl.style.display = 'block';
@@ -336,7 +341,7 @@ export async function setupAppEnvironment(page: Page) {
               
               // Validate the prompt
               if (prompt.length < 20) {
-                const errorEl = contentEl.querySelector('[data-testid="error-message"]');
+                const errorEl = contentEl.querySelector('[data-testid="error-message"]') as HTMLElement;
                 if (errorEl) {
                   errorEl.textContent = 'Prompt must be at least 20 characters';
                   errorEl.style.display = 'block';
@@ -346,7 +351,7 @@ export async function setupAppEnvironment(page: Page) {
               
               // Validate clinical terminology
               if (!this._containsClinicalTerminology(prompt)) {
-                const errorEl = contentEl.querySelector('[data-testid="error-message"]');
+                const errorEl = contentEl.querySelector('[data-testid="error-message"]') as HTMLElement;
                 if (errorEl) {
                   errorEl.textContent = 'Please include clinical terminology or patient information';
                   errorEl.style.display = 'block';
@@ -355,13 +360,13 @@ export async function setupAppEnvironment(page: Page) {
               }
               
               // Clear any previous error
-              const errorEl = contentEl.querySelector('[data-testid="error-message"]');
+              const errorEl = contentEl.querySelector('[data-testid="error-message"]') as HTMLElement;
               if (errorEl) {
                 errorEl.style.display = 'none';
               }
               
               // Show loading state
-              const loadingEl = contentEl.querySelector('[data-testid="loading-state"]');
+              const loadingEl = contentEl.querySelector('[data-testid="loading-state"]') as HTMLElement;
               if (loadingEl) {
                 loadingEl.style.display = 'block';
               }
@@ -413,14 +418,14 @@ export async function setupAppEnvironment(page: Page) {
                   suggestionsEl.innerHTML = `
                     <h2>Exercise Suggestions</h2>
                     <ul class="exercise-list">
-                      ${this.generatedExercises.map((ex, index) => `
+                      ${this.generatedExercises.map((ex: any, index: number) => `
                         <li data-testid="exercise-item" data-id="${ex.id}" class="exercise-item">
                           <h3>${ex.name}</h3>
                           <p>${ex.description}</p>
                           <div class="exercise-instructions">
                             <h4>Instructions:</h4>
                             <ol>
-                              ${ex.instructions.map(instr => `<li>${instr}</li>`).join('')}
+                              ${ex.instructions.map((instr: string) => `<li>${instr}</li>`).join('')}
                             </ol>
                           </div>
                           
@@ -444,7 +449,7 @@ export async function setupAppEnvironment(page: Page) {
                               <p>${ex.evidence}</p>
                               <h5>Contraindications:</h5>
                               <ul>
-                                ${ex.contraindications?.map(item => `<li>${item}</li>`).join('') || ''}
+                                ${ex.contraindications?.map((item: string) => `<li>${item}</li>`).join('') || ''}
                               </ul>
                             </div>
                           </div>
@@ -455,7 +460,7 @@ export async function setupAppEnvironment(page: Page) {
                       <button data-testid="feedback-button" class="feedback-button">Submit Feedback</button>
                     </div>
                   `;
-                  suggestionsEl.style.display = 'block';
+                  (suggestionsEl as HTMLElement).style.display = 'block';
                   
                   // Add event handlers for ratings
                   suggestionsEl.querySelectorAll('.rating-button').forEach(btn => {
@@ -482,7 +487,7 @@ export async function setupAppEnvironment(page: Page) {
                       target.classList.add('selected');
                       
                       // Show comment box
-                      const commentBox = exerciseItem?.querySelector('[data-testid="comment-box"]');
+                      const commentBox = exerciseItem?.querySelector('[data-testid="comment-box"]') as HTMLElement;
                       if (commentBox) {
                         commentBox.style.display = 'block';
                       }
@@ -494,7 +499,7 @@ export async function setupAppEnvironment(page: Page) {
                     btn.addEventListener('click', (e) => {
                       const target = e.target as HTMLElement;
                       const exerciseItem = target.closest('[data-testid="exercise-item"]');
-                      const evidencePanel = exerciseItem?.querySelector('[data-testid="research-evidence"]');
+                      const evidencePanel = exerciseItem?.querySelector('[data-testid="research-evidence"]') as HTMLElement;
                       
                       if (evidencePanel) {
                         evidencePanel.style.display = evidencePanel.style.display === 'none' ? 'block' : 'none';
@@ -551,7 +556,7 @@ export async function setupAppEnvironment(page: Page) {
               
               // Validate search query
               if (query.length < 2) {
-                const errorEl = contentEl.querySelector('[data-testid="search-error"]');
+                const errorEl = contentEl.querySelector('[data-testid="search-error"]') as HTMLElement;
                 if (errorEl) {
                   errorEl.textContent = 'Search query must be at least 2 characters';
                   errorEl.style.display = 'block';
@@ -560,15 +565,15 @@ export async function setupAppEnvironment(page: Page) {
               }
               
               // Hide error if previously shown
-              const errorEl = contentEl.querySelector('[data-testid="search-error"]');
+              const errorEl = contentEl.querySelector('[data-testid="search-error"]') as HTMLElement;
               if (errorEl) {
                 errorEl.style.display = 'none';
               }
               
               // Check for nonexistent organization
               if (query.includes('nonexistent')) {
-                const noResultsEl = contentEl.querySelector('[data-testid="no-results"]');
-                const listEl = contentEl.querySelector('[data-testid="organization-list"]');
+                const noResultsEl = contentEl.querySelector('[data-testid="no-results"]') as HTMLElement;
+                const listEl = contentEl.querySelector('[data-testid="organization-list"]') as HTMLElement;
                 
                 if (noResultsEl) noResultsEl.style.display = 'block';
                 if (listEl) listEl.style.display = 'none';
@@ -576,8 +581,8 @@ export async function setupAppEnvironment(page: Page) {
               }
               
               // Show results
-              const listEl = contentEl.querySelector('[data-testid="organization-list"]');
-              const noResultsEl = contentEl.querySelector('[data-testid="no-results"]');
+              const listEl = contentEl.querySelector('[data-testid="organization-list"]') as HTMLElement;
+              const noResultsEl = contentEl.querySelector('[data-testid="no-results"]') as HTMLElement;
               
               if (noResultsEl) noResultsEl.style.display = 'none';
               
@@ -602,9 +607,15 @@ export async function setupAppEnvironment(page: Page) {
                       clinic_id: orgId === 'org-1' ? 'CLINIC-1' : (orgId === 'org-2' ? 'CLINIC-2' : 'CLINIC-3')
                     };
                     
+                    // Update user profile with organization data (simulating real app behavior)
+                    if (this.userProfile) {
+                      this.userProfile.clinic_id = this.selectedOrganization.clinic_id;
+                      this.userProfile.organization = this.selectedOrganization.name;
+                    }
+                    
                     // Show selection confirmation
-                    const selectedEl = contentEl.querySelector('[data-testid="organization-selected"]');
-                    const currentOrgEl = contentEl.querySelector('[data-testid="current-organization"]');
+                    const selectedEl = contentEl.querySelector('[data-testid="organization-selected"]') as HTMLElement;
+                    const currentOrgEl = contentEl.querySelector('[data-testid="current-organization"]') as HTMLElement;
                     
                     if (selectedEl) {
                       selectedEl.textContent = orgName;
@@ -651,7 +662,7 @@ export async function setupAppEnvironment(page: Page) {
       /**
        * Helper method to check if a string contains clinical terminology
        */
-      _containsClinicalTerminology(text) {
+      _containsClinicalTerminology(text: string) {
         const clinicalTerms = [
           'pain', 'patient', 'exercise', 'therapy', 'strength', 'mobility',
           'range of motion', 'rom', 'rehab', 'rehabilitation', 'physical therapy',

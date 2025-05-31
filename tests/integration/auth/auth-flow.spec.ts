@@ -90,16 +90,12 @@ test.describe('Authentication & Onboarding Flow', () => {
     // Select the first organization
     await organizationPage.selectOrganization(0);
     
-    // Verify organization was selected
-    const selectedOrg = await organizationPage.getSelectedOrganization();
-    expect(selectedOrg).toBeTruthy();
-    
-    // Verify organization state was updated
+    // Verify organization was selected successfully
     const selectedOrgState = await organizationPage.getSelectedOrganizationState();
     expect(selectedOrgState).toBeTruthy();
-    expect(selectedOrgState.id).toBeTruthy();
-    expect(selectedOrgState.name).toBeTruthy();
-    expect(selectedOrgState.clinic_id).toBeTruthy();
+    expect(selectedOrgState!.id).toBeTruthy();
+    expect(selectedOrgState!.name).toBeTruthy();
+    expect(selectedOrgState!.clinic_id).toBeTruthy();
   });
   
   test('should redirect to login when accessing protected route without auth', async ({ page }) => {

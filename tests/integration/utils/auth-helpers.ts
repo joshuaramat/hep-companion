@@ -1,5 +1,10 @@
 import { Page, expect } from '@playwright/test';
-import { testUsers } from '../mocks/handlers';
+// import { testUsers } from '../mocks/handlers';
+
+// Simple test users for auth helpers
+const testUsers = [
+  { id: 'test-user-id', email: 'test@example.com', password: 'password123' }
+];
 
 // Define the type for the auth state
 interface TestAuthState {

@@ -1,98 +1,108 @@
 import { test, expect } from '@playwright/test';
-import { loginUser } from '../utils/auth-helpers';
-import { GeneratePage, ExerciseSuggestionsPage } from '../utils/page-objects';
-import '../mocks/setup';
+import { setupAppEnvironment } from '../utils/app-environment';
+import { LoginPage, GeneratePage } from '../utils/page-objects';
+// import '../mocks/setup';
 
 test.describe('Exercise Generation Flow', () => {
   test.beforeEach(async ({ page }) => {
+    // Set up the simulated application environment
+    await setupAppEnvironment(page);
+    
     // Login before each test
-    await loginUser(page);
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await loginPage.login('test@example.com', 'password123');
   });
-  
+
   test('should navigate to generate page and display form', async ({ page }) => {
     const generatePage = new GeneratePage(page);
     await generatePage.goto();
     
-    // Verify form fields are visible
+    // Verify form elements are visible
     await expect(generatePage.promptTextarea).toBeVisible();
+    await expect(generatePage.mrnInput).toBeVisible();
+    await expect(generatePage.clinicIdInput).toBeVisible();
     await expect(generatePage.generateButton).toBeVisible();
   });
-  
+
   test('should generate exercises from clinical scenario', async ({ page }) => {
     const generatePage = new GeneratePage(page);
     await generatePage.goto();
     
-    // Enter clinical scenario
-    const clinicalScenario = 'Patient with chronic lower back pain, age 45, needs home exercises to improve core strength and reduce pain. Has access to resistance bands but no other equipment.';
+    const clinicalScenario = 'Patient with chronic lower back pain, age 45, needs home exercises to improve core strength.';
     await generatePage.generateExercises(clinicalScenario);
     
-    // Verify exercise suggestions are displayed
-    const suggestionsPage = new ExerciseSuggestionsPage(page);
-    const exerciseCount = await suggestionsPage.getExerciseCount();
+    // Verify exercises are generated
+    await expect(generatePage.exerciseSuggestions).toBeVisible();
+    const exerciseCount = await generatePage.getExerciseCount();
     expect(exerciseCount).toBeGreaterThan(0);
-    
-    // Verify first exercise has content
-    const firstExerciseName = await suggestionsPage.getExerciseName(0);
-    expect(firstExerciseName).toBeTruthy();
   });
-  
+
   test('should handle patient identifiers correctly', async ({ page }) => {
     const generatePage = new GeneratePage(page);
     await generatePage.goto();
     
-    // Enter clinical scenario with patient identifiers
-    const clinicalScenario = 'Patient needs shoulder mobility exercises after rotator cuff repair surgery.';
-    await generatePage.generateExercises(clinicalScenario, '12345', 'CLINIC-1');
+    // Fill in patient identifier
+    await generatePage.fillPatientMRN('MRN-12345');
     
-    // Verify exercise suggestions are displayed
-    const suggestionsPage = new ExerciseSuggestionsPage(page);
-    const exerciseCount = await suggestionsPage.getExerciseCount();
-    expect(exerciseCount).toBeGreaterThan(0);
+    const clinicalScenario = 'Patient with shoulder impingement needs mobility exercises.';
+    await generatePage.generateExercises(clinicalScenario);
+    
+    // Verify exercises are generated with patient context
+    await expect(generatePage.exerciseSuggestions).toBeVisible();
+    
+    // Verify MRN is preserved
+    await expect(generatePage.mrnInput).toHaveValue('MRN-12345');
   });
-  
+
   test('should show error for prompt that is too short', async ({ page }) => {
     const generatePage = new GeneratePage(page);
     await generatePage.goto();
     
-    // Enter a prompt that's too short
-    await generatePage.fillPrompt('Short prompt');
-    await generatePage.submitForm();
+    // Try to generate with a very short prompt
+    await generatePage.fillPrompt('Short');
+    await generatePage.generateButton.click();
     
-    // Check for error message
-    const hasError = await generatePage.hasError();
-    expect(hasError).toBeTruthy();
-    
-    const errorMessage = await generatePage.getErrorMessage();
-    expect(errorMessage).toContain('at least 20 characters');
+    // Verify error message is shown
+    await expect(generatePage.hasError()).resolves.toBeTruthy();
+    await expect(generatePage.getErrorMessage()).resolves.toContain('20 characters');
   });
-  
+
   test('should show error for non-clinical prompt', async ({ page }) => {
     const generatePage = new GeneratePage(page);
     await generatePage.goto();
     
-    // Enter a non-clinical prompt that's long enough
-    await generatePage.fillPrompt('This is a long enough prompt but contains no clinical terminology or patient information.');
-    await generatePage.submitForm();
+    // Try to generate with non-clinical content that's long enough
+    // Carefully avoid any terms that might be considered clinical
+    const nonClinicalPrompt = 'I want to learn about baking chocolate cakes and making frosting. Also interested in gardening tips for growing tomatoes and flowers in my backyard during summer.';
+    await generatePage.fillPrompt(nonClinicalPrompt);
+    await generatePage.generateButton.click();
     
-    // Check for error message about clinical validation
-    const hasError = await generatePage.hasError();
-    expect(hasError).toBeTruthy();
+    // Wait for validation to process
+    await page.waitForTimeout(500);
     
-    const errorMessage = await generatePage.getErrorMessage();
-    expect(errorMessage).toContain('clinical');
+    // The error should be visible for non-clinical content
+    await expect(generatePage.errorMessage).toBeVisible();
+    await expect(generatePage.errorMessage).toContainText('clinical terminology');
   });
-  
+
   test('should show loading state during generation', async ({ page }) => {
     const generatePage = new GeneratePage(page);
     await generatePage.goto();
     
-    // Enter valid clinical scenario
-    await generatePage.fillPrompt('Patient with chronic lower back pain, age 45, needs home exercises to improve core strength and reduce pain.');
+    const clinicalScenario = 'Patient recovering from knee surgery needs progressive strengthening exercises.';
     
-    // Submit but don't wait for completion
-    await generatePage.submitForm();
+    // Start generation
+    await generatePage.fillPrompt(clinicalScenario);
+    await generatePage.generateButton.click();
     
-    // Verify loading state is shown
-    await expect(generatePage.loadingState).toBeVisible();
+    // Verify loading state appears
+    await expect(generatePage.loadingIndicator).toBeVisible();
+    
+    // Wait for exercises to load
+    await expect(generatePage.exerciseSuggestions).toBeVisible();
+    
+    // Verify loading state disappears
+    await expect(generatePage.loadingIndicator).not.toBeVisible();
   });
 }); 

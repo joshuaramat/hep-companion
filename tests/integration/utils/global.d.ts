@@ -39,6 +39,19 @@ interface AppState {
   }>;
   currentPrompt?: string;
   
+  // User profile data
+  userProfile: {
+    id: string | null;
+    clinic_id: string | null;
+    organization: string | null;
+    full_name: string | null;
+    profession: string | null;
+  };
+  
+  // UI state
+  showResults?: boolean;
+  generatedResults?: any;
+  
   // Navigation and view management
   navigate(route: string): void;
   createView(route: string): void;
@@ -47,6 +60,11 @@ interface AppState {
   // User and session management
   toggleUserMenu(): void;
   logout(): void;
+  loadUserProfile(): Promise<void>;
+  
+  // Helper methods
+  _showNotification(message: string, type?: string): void;
+  _containsClinicalTerminology(text: string): boolean;
 }
 
 /**
