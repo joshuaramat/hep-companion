@@ -71,6 +71,7 @@ export default function HomePage() {
   const [prompt, setPrompt] = useState('');
   const [mrn, setMrn] = useState('');
   const [clinicId, setClinicId] = useState('');
+  const [organizationName, setOrganizationName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -126,6 +127,30 @@ export default function HomePage() {
       
       if (!session) {
         router.push('/auth/login?redirectUrl=/');
+        return;
+      }
+      
+      // Load user profile data including clinic_id
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('clinic_id, organization')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (error) {
+          console.error('Failed to load user profile:', error);
+        } else if (profile) {
+          // Auto-populate clinic ID from user's organization
+          if (profile.clinic_id) {
+            setClinicId(profile.clinic_id);
+          }
+          if (profile.organization) {
+            setOrganizationName(profile.organization);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
       }
     };
     
@@ -225,7 +250,8 @@ export default function HomePage() {
     setGeneratedResults(null);
     setPrompt('');
     setMrn('');
-    setClinicId('');
+    // Keep clinicId - don't clear it as it should persist from user's organization
+    // setClinicId(''); // ❌ Removed - this was clearing the user's organization clinic ID
   };
 
   const toggleStreamingMode = () => {
@@ -417,6 +443,16 @@ export default function HomePage() {
                   placeholder="Your clinic identifier"
                   disabled={isLoading}
                 />
+                {organizationName && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    <span className="inline-flex items-center gap-1">
+                      <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      From your organization: <span className="font-medium">{organizationName}</span>
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
 
