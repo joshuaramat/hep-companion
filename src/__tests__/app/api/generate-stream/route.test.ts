@@ -157,8 +157,8 @@ describe('Generate Stream SSE API Route', () => {
   
   beforeAll(async () => {
     // Dynamic import to ensure mocks are applied
-    const module = await import('@/app/api/generate-stream/route');
-    POST = module.POST;
+    const routeModule = await import('@/app/api/generate-stream/route');
+    POST = routeModule.POST;
   });
 
   beforeEach(() => {
