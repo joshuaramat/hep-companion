@@ -45,7 +45,7 @@ export function useErrorHandler() {
           // If we can't parse the error response JSON
           setError({
             message: error.statusText || 'An error occurred',
-            code: ApiErrorCode.UNEXPECTED_ERROR
+            code: ApiErrorCode._UNEXPECTED_ERROR
           });
         });
       return;
@@ -54,7 +54,7 @@ export function useErrorHandler() {
     // Handle network errors and other unexpected errors
     setError({
       message: error?.toString() || 'An unexpected error occurred',
-      code: ApiErrorCode.UNEXPECTED_ERROR
+      code: ApiErrorCode._UNEXPECTED_ERROR
     });
   }, []);
 
