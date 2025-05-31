@@ -83,6 +83,8 @@
     "@babel/preset-env": "^7.27.2",
     "@babel/preset-react": "^7.27.1",
     "@babel/preset-typescript": "^7.27.1",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.28.0",
     "@next/bundle-analyzer": "^15.3.3",
     "@playwright/test": "^1.52.0",
     "@swc/jest": "^0.2.38",

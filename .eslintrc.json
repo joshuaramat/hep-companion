@@ -7,11 +7,6 @@
       "varsIgnorePattern": "^_",
       "ignoreRestSiblings": true
     }],
-    "@typescript-eslint/no-unused-vars": ["warn", { 
-      "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_",
-      "ignoreRestSiblings": true
-    }],
     "react-hooks/exhaustive-deps": "warn"
   },
   "overrides": [
@@ -25,8 +20,7 @@
       },
       "rules": {
         "no-console": "off",
-        "no-unused-vars": "off",
-        "@typescript-eslint/no-unused-vars": "off"
+        "no-unused-vars": "off"
       }
     }
   ]
