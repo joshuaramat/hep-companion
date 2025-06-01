@@ -48,6 +48,9 @@
       "pattern": "^https://staging.hep-companion.com"
     },
     {
+      "pattern": "^mailto:"
+    },
+    {
       "pattern": "./planning/IMPLEMENTATION_PLAN.md"
     },
     {
