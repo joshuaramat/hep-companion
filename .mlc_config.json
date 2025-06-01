@@ -1,0 +1,210 @@
+{
+  "timeout": "10s",
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackRetryDelay": "30s",
+  "aliveStatusCodes": [200, 206, 301, 302, 307],
+  "ignorePatterns": [
+    {
+      "pattern": "^http://localhost"
+    },
+    {
+      "pattern": "^https://localhost"
+    },
+    {
+      "pattern": "^http://127.0.0.1"
+    },
+    {
+      "pattern": "^https://127.0.0.1"
+    },
+    {
+      "pattern": "^http://app:"
+    },
+    {
+      "pattern": "^http://kong:"
+    },
+    {
+      "pattern": "^http://postgrest:"
+    },
+    {
+      "pattern": "^http://auth:"
+    },
+    {
+      "pattern": "^http://realtime:"
+    },
+    {
+      "pattern": "^http://storage:"
+    },
+    {
+      "pattern": "^http://studio:"
+    },
+    {
+      "pattern": "^http://mailhog:"
+    },
+    {
+      "pattern": "^https://hep-companion.com"
+    },
+    {
+      "pattern": "^https://staging.hep-companion.com"
+    },
+    {
+      "pattern": "./planning/IMPLEMENTATION_PLAN.md"
+    },
+    {
+      "pattern": "./planning/phase-1.2-implementation-summary.md"
+    },
+    {
+      "pattern": "./documentation/CHANGELOG.md"
+    },
+    {
+      "pattern": "./documentation/PROJECT_README.md"
+    },
+    {
+      "pattern": "./documentation/DOCS_README.md"
+    },
+    {
+      "pattern": "./security/SECURITY-IMPLEMENTATION.md"
+    },
+    {
+      "pattern": "./security/security-headers-implementation.md"
+    },
+    {
+      "pattern": "./security/SECURITY_README.md"
+    },
+    {
+      "pattern": "./testing/test-coverage-plan.md"
+    },
+    {
+      "pattern": "./testing/INTEGRATION_TESTING_README.md"
+    },
+    {
+      "pattern": "./user-guides/enterprise-sso.md"
+    },
+    {
+      "pattern": "./user-guides/user-onboarding-flow.md"
+    },
+    {
+      "pattern": "./scripts/SCRIPTS_README.md"
+    },
+    {
+      "pattern": "./database/MIGRATIONS_README.md"
+    },
+    {
+      "pattern": "./docker/"
+    },
+    {
+      "pattern": "./docker/docker-implementation-plan.md"
+    },
+    {
+      "pattern": "./docker/docker-quick-reference.md"
+    },
+    {
+      "pattern": "./docker/docker-phase2-supabase.md"
+    },
+    {
+      "pattern": "../development/troubleshooting.md"
+    },
+    {
+      "pattern": "./ai-integration.md"
+    },
+    {
+      "pattern": "./exercise-management.md"
+    },
+    {
+      "pattern": "./devops-guide.md"
+    },
+    {
+      "pattern": "./devops-maturity-roadmap.md"
+    },
+    {
+      "pattern": "./deployment-guide.md"
+    },
+    {
+      "pattern": "./monitoring-observability.md"
+    },
+    {
+      "pattern": "./user-guides/api-reference.md"
+    },
+    {
+      "pattern": "./operations/monitoring-guide.md"
+    },
+    {
+      "pattern": "./user-guides/clinician-guide.md"
+    },
+    {
+      "pattern": "./user-guides/admin-guide.md"
+    },
+    {
+      "pattern": "./development/troubleshooting.md"
+    },
+    {
+      "pattern": "./docs/development/CHANGELOG.md"
+    },
+    {
+      "pattern": "./docs/security/README.md"
+    },
+    {
+      "pattern": "./docs/user/"
+    },
+    {
+      "pattern": "./docs/security/"
+    },
+    {
+      "pattern": "./docs/development/"
+    },
+    {
+      "pattern": "./scripts/README.md"
+    },
+    {
+      "pattern": "./docs/README.md"
+    },
+    {
+      "pattern": "./phases/phase-4-testing.md"
+    },
+    {
+      "pattern": "./roadmap.md"
+    },
+    {
+      "pattern": "../security/security-headers-implementation.md"
+    },
+    {
+      "pattern": "./system-overview.md"
+    },
+    {
+      "pattern": "./database-design.md"
+    },
+    {
+      "pattern": "./api-design.md"
+    },
+    {
+      "pattern": "./security-architecture.md"
+    },
+    {
+      "pattern": "./best-practices.md"
+    },
+    {
+      "pattern": "./compliance/security-policy.md"
+    },
+    {
+      "pattern": "../operations/runbooks/incident-response.md"
+    },
+    {
+      "pattern": "../architecture/security-architecture.md"
+    }
+  ],
+  "replacementPatterns": [
+    {
+      "pattern": "^/",
+      "replacement": "{{BASEURL}}/"
+    }
+  ],
+  "httpHeaders": [
+    {
+      "urls": ["https://github.com"],
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+      }
+    }
+  ]
+} 

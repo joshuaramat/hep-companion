@@ -1,0 +1,75 @@
+# Lychee link checker configuration
+# https://lychee.cli.rs/
+
+# Maximum number of retries per link
+retry = 3
+
+# Delay between retries (in seconds)
+retry_delay = 1
+
+# Maximum number of concurrent requests
+max_concurrency = 10
+
+# User agent string for HTTP requests
+user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+
+# Accepted status codes for successful links
+accepted = [200, 204, 206, 301, 302, 307, 308, 999]
+
+# Timeout for each request (in seconds)
+timeout = 30
+
+# Exclude patterns (regex)
+exclude = [
+    # Local development URLs
+    "^http://localhost",
+    "^https://localhost", 
+    "^http://127.0.0.1",
+    "^https://127.0.0.1",
+    
+    # Docker service URLs
+    "^http://app:",
+    "^http://kong:",
+    "^http://postgrest:",
+    "^http://auth:",
+    "^http://realtime:",
+    "^http://storage:",
+    "^http://studio:",
+    "^http://mailhog:",
+    
+    # Production/staging URLs that may not be available
+    "^https://hep-companion.com",
+    "^https://staging.hep-companion.com",
+    
+    # Internal file links that don't exist yet
+    "ai-integration.md",
+    "exercise-management.md",
+    "deployment-guide.md",
+    "monitoring-observability.md",
+    "devops-guide.md",
+    "devops-maturity-roadmap.md",
+    "troubleshooting.md",
+    "api-reference.md",
+    "clinician-guide.md",
+    "admin-guide.md",
+    "monitoring-guide.md",
+    "system-overview.md",
+    "database-design.md",
+    "api-design.md",
+    "security-architecture.md",
+    "best-practices.md",
+    "security-policy.md",
+    "incident-response.md",
+    "phase-4-testing.md",
+    "roadmap.md",
+    "security-headers-implementation.md",
+]
+
+# Include only specific file types
+include = ["*.md"]
+
+# Check local files
+check_local = true
+
+# Include verbatim matches for dead link detection
+verbatim = true 
