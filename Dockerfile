@@ -1,5 +1,8 @@
+# Build arguments
+ARG NODE_VERSION=20
+
 # Development stage
-FROM node:20-alpine AS development
+FROM node:${NODE_VERSION}-alpine AS development
 
 # Install dependencies for health checks
 RUN apk add --no-cache curl
@@ -19,23 +22,7 @@ EXPOSE 3000
 CMD ["npm", "run", "dev"]
 
 # Test stage
-FROM node:20-alpine AS test
-
-# Install dependencies for Playwright
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    nodejs \
-    yarn
-
-# Set environment variables for Playwright
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+FROM mcr.microsoft.com/playwright:v1.44.0-focal AS test
 
 WORKDIR /app
 
@@ -46,14 +33,12 @@ RUN npm ci
 # Copy the rest of the application
 COPY . .
 
-# Install Playwright browsers
-RUN npx playwright install --with-deps chromium
-
+# Playwright browsers are pre-installed in the Microsoft image
 # Test command (can be overridden)
 CMD ["npm", "run", "test:all"]
 
 # Dependencies stage (for production)
-FROM node:20-alpine AS deps
+FROM node:${NODE_VERSION}-alpine AS deps
 
 WORKDIR /app
 
@@ -62,7 +47,7 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # Builder stage
-FROM node:20-alpine AS builder
+FROM node:${NODE_VERSION}-alpine AS builder
 
 WORKDIR /app
 
@@ -78,7 +63,7 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine AS production
+FROM node:${NODE_VERSION}-alpine AS production
 
 # Install curl for health checks
 RUN apk add --no-cache curl

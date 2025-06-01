@@ -12,6 +12,55 @@ declare global {
   }
 }
 
+// Add polyfills for Node.js environment
+if (typeof global !== 'undefined' && !global.Response) {
+  // Polyfill Response for Node.js environment
+  global.Response = class Response {
+    status: number;
+    statusText: string;
+    headers: any;
+    body: any;
+    ok: boolean;
+
+    constructor(body?: any, init?: { status?: number; statusText?: string; headers?: any }) {
+      this.body = body;
+      this.status = init?.status || 200;
+      this.statusText = init?.statusText || 'OK';
+      this.headers = init?.headers || {};
+      this.ok = this.status >= 200 && this.status < 300;
+    }
+
+    async json() {
+      return typeof this.body === 'string' ? JSON.parse(this.body) : this.body;
+    }
+
+    async text() {
+      return typeof this.body === 'string' ? this.body : JSON.stringify(this.body);
+    }
+  } as any;
+}
+
+if (typeof global !== 'undefined' && !global.Request) {
+  // Polyfill Request for Node.js environment
+  global.Request = class Request {
+    url: string;
+    method: string;
+    body: any;
+    headers: any;
+
+    constructor(url: string, init?: any) {
+      this.url = url;
+      this.method = init?.method || 'GET';
+      this.body = init?.body;
+      this.headers = init?.headers || {};
+    }
+
+    async json() {
+      return typeof this.body === 'string' ? JSON.parse(this.body) : this.body;
+    }
+  } as any;
+}
+
 // Set up the mock server for Node.js environment
 export const server = setupServer(...handlers);
 

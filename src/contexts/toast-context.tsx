@@ -13,8 +13,8 @@ export interface Toast {
 
 interface ToastContextType {
   toasts: Toast[];
-  showToast: (message: string, type?: ToastType, duration?: number) => void;
-  removeToast: (id: string) => void;
+  showToast: (_message: string, _type?: 'success' | 'error' | 'info', _duration?: number) => void;
+  removeToast: (_id: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);

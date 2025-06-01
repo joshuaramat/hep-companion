@@ -67,17 +67,41 @@ export function validateEnv(): EnvConfig {
   }
 }
 
-// Export the validated environment
-export const env = validateEnv();
+// Cache for validated environment to avoid re-validation
+let _env: EnvConfig | null = null;
+
+// Export the validated environment - use lazy evaluation
+export function getEnv(): EnvConfig {
+  if (_env === null) {
+    _env = validateEnv();
+  }
+  return _env;
+}
+
+// Helper function to get base URL
+export function getBaseUrl(): string {
+  const env = getEnv();
+  
+  if (env.NEXT_PUBLIC_SITE_URL) {
+    return env.NEXT_PUBLIC_SITE_URL;
+  }
+  
+  if (env.VERCEL_URL) {
+    return `https://${env.VERCEL_URL}`;
+  }
+  
+  return 'http://localhost:3000';
+}
+
+// Export a getter for the environment that validates lazily
+export const env = new Proxy({} as EnvConfig, {
+  get(target, prop) {
+    const validatedEnv = getEnv();
+    return validatedEnv[prop as keyof EnvConfig];
+  }
+});
 
 // Helper function to check if we're in a specific environment
 export const isProduction = env.NODE_ENV === 'production';
 export const isDevelopment = env.NODE_ENV === 'development';
-export const isTest = env.NODE_ENV === 'test';
-
-// Helper to get base URL
-export function getBaseUrl(): string {
-  if (env.NEXT_PUBLIC_SITE_URL) return env.NEXT_PUBLIC_SITE_URL;
-  if (env.VERCEL_URL) return `https://${env.VERCEL_URL}`;
-  return 'http://localhost:3000';
-} 
+export const isTest = env.NODE_ENV === 'test'; 

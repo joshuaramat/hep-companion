@@ -1,21 +1,18 @@
-import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
-import { nanoid } from 'nanoid';
-import { GPTValidationError, ValidationErrorType } from '@/utils/gpt-validation';
+import { GPTValidationError } from '@/utils/gpt-validation';
 import { retryWithExponentialBackoff, OpenAIAPIError } from '@/utils/retry';
 import { z } from 'zod';
 import { validateClinicalInput } from '@/services/utils/validation';
 import { logger } from '../../../utils/logger';
 import { createClient } from '@/services/supabase/server';
-import { cookies } from 'next/headers';
 import { generatePatientKey } from '@/utils/patient-key';
 import { logAudit } from '@/services/audit';
 import {
-  createSuccessResponse,
   createAuthErrorResponse,
   createValidationErrorResponse,
   createServerErrorResponse,
   createErrorResponse,
+  createSuccessResponse,
   withErrorHandling
 } from '@/utils/api-response';
 import { GPTResponseSchema } from '@/lib/schemas/gpt-response';
@@ -188,8 +185,7 @@ function validateGPTResponseWithSchema(data: unknown): z.infer<typeof GPTRespons
 
 async function handleGenerate(request: Request) {
   // Check authentication
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
   if (authError || !user) {
@@ -280,13 +276,13 @@ async function handleGenerate(request: Request) {
       const parsedResponse = cleanAndParseGPTResponse(response);
       const validatedResponse = validateGPTResponseWithSchema(parsedResponse);
       
-      // Success path - generate ID for the batch
-      const suggestionId = nanoid(8);
+      // Success path - generate UUID for the batch
+      const suggestionId = crypto.randomUUID();
       
-      // Add IDs to each exercise suggestion
+      // Add UUIDs to each exercise suggestion
       const exercisesWithIds = validatedResponse.exercises.map(exercise => ({
         ...exercise,
-        id: nanoid(8)
+        id: crypto.randomUUID()
       }));
       
       // Prepare response data
@@ -299,7 +295,7 @@ async function handleGenerate(request: Request) {
       logger.info(`Successfully processed suggestions: ${suggestionId}`);
       
       // Store the result in the database with user_id and patient_key
-      const { data: promptData, error: insertError } = await supabase
+      const { data: _promptData, error: insertError } = await supabase
         .from('prompts')
         .insert({
           id: suggestionId,
@@ -323,17 +319,15 @@ async function handleGenerate(request: Request) {
         confidence_level: validatedResponse.confidence_level
       });
 
-      return createSuccessResponse(
-        responseData,
-        'Exercise suggestions generated successfully'
-      );
+      // Return the response data directly
+      return createSuccessResponse(responseData, 'Exercise suggestions generated successfully');
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       
       // If this is a validation error that can't be fixed by retrying, break immediately
       if (error instanceof GPTValidationError && 
-          error.code !== 'PARSE_ERROR' && 
-          error.code !== 'EMPTY_RESPONSE') {
+          error._code !== 'PARSE_ERROR' && 
+          error._code !== 'EMPTY_RESPONSE') {
         break;
       }
       
@@ -355,15 +349,15 @@ async function handleGenerate(request: Request) {
     return createErrorResponse(
       lastError.message,
       400,
-      lastError.code || 'VALIDATION_ERROR',
-      JSON.stringify(lastError.details)
+      lastError._code || 'VALIDATION_ERROR',
+      JSON.stringify(lastError._details)
     );
   }
   
   if (lastError instanceof OpenAIAPIError) {
     return createErrorResponse(
       'There was a problem connecting to our AI service',
-      lastError.status || 500,
+      lastError._status || 500,
       'OPENAI_API_ERROR',
       lastError.message
     );

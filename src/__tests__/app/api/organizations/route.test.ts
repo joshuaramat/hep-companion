@@ -84,7 +84,8 @@ describe('Organizations API Route POST', () => {
     // Verify correct error response
     expect(mockJson).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: 'Authentication required',
+        ok: false,
+        message: 'Authentication required',
         code: 'AUTHENTICATION_ERROR'
       }),
       { status: 401 }
@@ -112,8 +113,10 @@ describe('Organizations API Route POST', () => {
     // Should return an error response
     expect(mockJson).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: expect.any(String),
-        code: 'UNEXPECTED_ERROR'
+        ok: false,
+        message: 'An unexpected error occurred',
+        code: 'INTERNAL_SERVER_ERROR',
+        error: 'Invalid JSON in request body'
       }),
       { status: 500 }
     );

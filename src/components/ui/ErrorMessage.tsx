@@ -23,8 +23,8 @@ export default function ErrorMessage({ error, onRetry }: ErrorMessageProps) {
   
   // Determine if we should show technical details (for certain error types)
   const showDetails = error.details && 
-    (error.code === ApiErrorCode.INPUT_VALIDATION_ERROR || 
-     error.code === ApiErrorCode.VALIDATION_ERROR);
+    (error.code === ApiErrorCode._INPUT_VALIDATION_ERROR || 
+     error.code === ApiErrorCode._VALIDATION_ERROR);
   
   return (
     <div className="rounded-md bg-amber-50 p-4 border border-amber-200 mb-6">

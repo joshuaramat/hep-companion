@@ -1,12 +1,17 @@
 {
-  "extends": ["next/core-web-vitals", "eslint:recommended"],
+  "extends": "next/core-web-vitals",
   "rules": {
-    "no-unused-vars": "warn",
-    "no-console": ["warn", { "allow": ["warn", "error"] }]
+    "react/react-in-jsx-scope": "off",
+    "no-unused-vars": ["warn", { 
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_",
+      "ignoreRestSiblings": true
+    }],
+    "react-hooks/exhaustive-deps": "warn"
   },
   "overrides": [
     {
-      "files": ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
+      "files": ["**/__tests__/**/*", "**/*.test.*", "**/*.spec.*"],
       "env": {
         "jest": true
       },
@@ -14,8 +19,8 @@
         "fail": "readonly"
       },
       "rules": {
-        // Relaxed rules for test files
-        "no-console": "off"
+        "no-console": "off",
+        "no-unused-vars": "off"
       }
     }
   ]

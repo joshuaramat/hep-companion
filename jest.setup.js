@@ -1,10 +1,77 @@
+/* global jest, Promise, Symbol, ArrayBuffer */
+
 // Learn more: https://github.com/testing-library/jest-dom
 require('@testing-library/jest-dom');
 
-// Mock environment variables
+// Mock environment variables early
+process.env.NODE_ENV = 'test';
 process.env.OPENAI_API_KEY = 'test-api-key';
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+process.env.FAIL_ON_ENV_ERROR = 'false';  // Don't crash on env errors in tests
+
+// Add TextEncoder/TextDecoder for Node.js environment
+const { TextEncoder, TextDecoder } = require('util');
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
+// Mock BroadcastChannel for MSW compatibility
+global.BroadcastChannel = class BroadcastChannel {
+  constructor(name) {
+    this.name = name;
+  }
+  
+  postMessage() {}
+  addEventListener() {}
+  removeEventListener() {}
+  close() {}
+  
+  get onmessage() { return null; }
+  set onmessage(handler) {}
+  
+  get onmessageerror() { return null; }
+  set onmessageerror(handler) {}
+};
+
+// Mock crypto.randomUUID for Node.js environment
+if (!global.crypto) {
+  global.crypto = {};
+}
+global.crypto.randomUUID = jest.fn(() => 'test-uuid-' + Math.random().toString(36).substr(2, 9));
+
+// Mock ReadableStream for Node.js environment
+global.ReadableStream = class ReadableStream {
+  constructor(underlyingSource) {
+    this.underlyingSource = underlyingSource;
+  }
+  
+  getReader() {
+    return {
+      read: () => Promise.resolve({ done: true, value: undefined }),
+      cancel: () => Promise.resolve()
+    };
+  }
+};
+
+// Add Response global for MSW/integration tests
+class MockResponse {
+  constructor(body, init) {
+    this.body = body;
+    this.status = init?.status || 200;
+    this.statusText = init?.statusText || 'OK';
+    this.headers = new MockHeaders(init?.headers);
+  }
+  
+  async json() {
+    return JSON.parse(this.body);
+  }
+  
+  async text() {
+    return this.body;
+  }
+}
+
+global.Response = MockResponse;
 
 // Mock web Request/Response globals for Node.js environment
 class MockRequest {

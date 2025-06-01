@@ -3,14 +3,15 @@ import { getExerciseById, updateExercise, deleteExercise } from '@/services/supa
 import { ExerciseUpdate } from '@/types/exercise';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const exercise = await getExerciseById(params.id);
+    const { id } = await params;
+    const exercise = await getExerciseById(id);
     return NextResponse.json({ exercise });
   } catch (error) {
     console.error('Error fetching exercise:', error);
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params;
     const body = await request.json();
     
     // Validate condition if provided
@@ -59,7 +61,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (body.year) updateData.year = body.year;
     if (body.doi !== undefined) updateData.doi = body.doi;
     
-    const updatedExercise = await updateExercise(params.id, updateData);
+    const updatedExercise = await updateExercise(id, updateData);
     
     return NextResponse.json({
       exercise: updatedExercise,
@@ -99,7 +101,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    await deleteExercise(params.id);
+    const { id } = await params;
+    await deleteExercise(id);
     
     return NextResponse.json({
       message: 'Exercise deleted successfully'

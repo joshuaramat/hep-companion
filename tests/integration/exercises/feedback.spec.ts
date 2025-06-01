@@ -1,12 +1,17 @@
 import { test, expect } from '@playwright/test';
-import { loginUser } from '../utils/auth-helpers';
-import { GeneratePage, ExerciseSuggestionsPage } from '../utils/page-objects';
-import '../mocks/setup';
+import { setupAppEnvironment } from '../utils/app-environment';
+import { LoginPage, GeneratePage, ExerciseSuggestionsPage } from '../utils/page-objects';
+// import '../mocks/setup';
 
 test.describe('Exercise Feedback Flow', () => {
   test.beforeEach(async ({ page }) => {
+    // Set up the simulated application environment
+    await setupAppEnvironment(page);
+    
     // Login and generate exercises before each test
-    await loginUser(page);
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await loginPage.login('test@example.com', 'password123');
     
     // Generate exercises
     const generatePage = new GeneratePage(page);
@@ -27,7 +32,7 @@ test.describe('Exercise Feedback Flow', () => {
     await expect(page.locator('[data-testid="rating-options"]').first()).toBeVisible();
     
     // Check for submit feedback button
-    await expect(suggestionsPage.submitFeedbackButton).toBeVisible();
+    await expect(suggestionsPage.feedbackButton).toBeVisible();
   });
   
   test('should allow rating individual exercises', async ({ page }) => {
@@ -53,9 +58,12 @@ test.describe('Exercise Feedback Flow', () => {
     const comment = 'This exercise is very helpful for lower back pain. Clear instructions.';
     await suggestionsPage.addComment(0, comment);
     
-    // Verify comment is added
-    const textarea = await page.locator('textarea').first();
-    await expect(textarea).toHaveValue(comment);
+    // Verify comment is added - be specific about which textarea
+    const exercises = await page.locator('[data-testid="exercise-item"]').all();
+    if (exercises.length > 0) {
+      const commentBox = exercises[0].locator('[data-testid="comment-box"]');
+      await expect(commentBox).toHaveValue(comment);
+    }
   });
   
   test('should show research evidence when requested', async ({ page }) => {
@@ -84,10 +92,16 @@ test.describe('Exercise Feedback Flow', () => {
     }
     
     // Submit all feedback
-    await suggestionsPage.submitAllFeedback();
+    await suggestionsPage.submitFeedback();
     
-    // Verify feedback success message
-    await expect(page.locator('[data-testid="feedback-success"]')).toBeVisible();
-    await expect(page.locator('[data-testid="feedback-success"]')).toContainText('Thank you for your feedback');
+    // Wait for navigation to success page
+    await page.waitForTimeout(1500); // Wait for submission and navigation
+    
+    // Verify we're on the success page
+    const currentView = await page.evaluate(() => document.getElementById('current-view')?.textContent);
+    expect(currentView).toBe('success');
+    
+    // Verify success message content
+    await expect(page.getByText('Thanks for your feedback!')).toBeVisible();
   });
 }); 

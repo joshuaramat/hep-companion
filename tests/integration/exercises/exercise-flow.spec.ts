@@ -60,17 +60,26 @@ test.describe('Exercise Generation Complete Flow', () => {
     await generatePage.fillPrompt('Short prompt');
     await generatePage.submitForm();
     
-    // Check for error message about length
-    expect(await generatePage.hasError()).toBeTruthy();
-    expect(await generatePage.getErrorMessage()).toContain('at least 20 characters');
+    // Wait for and check error message about length
+    await expect(generatePage.errorMessage).toBeVisible();
+    await expect(generatePage.errorMessage).toContainText('at least 20 characters');
+    
+    // Navigate away and back to clear the form completely
+    await page.evaluate(() => window.appState.navigate('dashboard'));
+    await page.waitForTimeout(300);
+    await generatePage.goto();
     
     // Test 2: Non-clinical prompt that's long enough
-    await generatePage.fillPrompt('This is a prompt that is definitely long enough but contains no clinical terminology or patient information.');
+    // Carefully avoid any terms that might be considered clinical
+    await generatePage.fillPrompt('I want to learn about baking chocolate cakes and decorating them with frosting and colorful sprinkles for birthday parties');
     await generatePage.submitForm();
     
-    // Check for error message about clinical validation
-    expect(await generatePage.hasError()).toBeTruthy();
-    expect(await generatePage.getErrorMessage()).toContain('clinical terminology');
+    // Give validation time to process
+    await page.waitForTimeout(1000);
+    
+    // Wait for and check error message about clinical validation
+    await expect(generatePage.errorMessage).toBeVisible();
+    await expect(generatePage.errorMessage).toContainText('clinical terminology');
   });
 
   test('should show loading state during generation', async ({ page }) => {
@@ -142,10 +151,10 @@ test.describe('Exercise Generation Complete Flow', () => {
     const suggestionsPage = new ExerciseSuggestionsPage(page);
     
     // Try to submit feedback without rating any exercises
-    const submissionSuccessful = await suggestionsPage.submitFeedback();
+    await suggestionsPage.feedbackButton.click();
     
-    // This should fail because we didn't rate any exercises
-    expect(submissionSuccessful).toBeFalsy();
+    // Should show a notification error about needing to rate exercises
+    await suggestionsPage.waitForNotification('Please rate at least one exercise');
     
     // Verify we're still on the generate page with exercises visible
     const currentView = await suggestionsPage.getCurrentView();
@@ -154,5 +163,8 @@ test.describe('Exercise Generation Complete Flow', () => {
     // Verify exercises are still visible
     const exerciseCount = await suggestionsPage.getExerciseCount();
     expect(exerciseCount).toBeGreaterThan(0);
+    
+    // Verify feedback success message is NOT shown
+    await expect(suggestionsPage.feedbackSuccess).not.toBeVisible();
   });
 }); 

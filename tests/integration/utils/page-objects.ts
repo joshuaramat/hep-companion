@@ -211,9 +211,11 @@ export class GeneratePage extends BasePage {
   readonly promptTextarea: Locator;
   readonly generateButton: Locator;
   readonly patientMrnInput: Locator;
+  readonly mrnInput: Locator;
   readonly clinicIdInput: Locator;
   readonly errorMessage: Locator;
   readonly loadingState: Locator;
+  readonly loadingIndicator: Locator;
   readonly exerciseSuggestions: Locator;
   readonly generateForm: Locator;
   
@@ -222,9 +224,11 @@ export class GeneratePage extends BasePage {
     this.promptTextarea = page.locator('[data-testid="prompt-textarea"]');
     this.generateButton = page.locator('[data-testid="generate-button"]');
     this.patientMrnInput = page.locator('[data-testid="mrn-input"]');
+    this.mrnInput = this.patientMrnInput;
     this.clinicIdInput = page.locator('[data-testid="clinic-id-input"]');
     this.errorMessage = page.locator('[data-testid="error-message"]');
     this.loadingState = page.locator('[data-testid="loading-state"]');
+    this.loadingIndicator = this.loadingState;
     this.exerciseSuggestions = page.locator('[data-testid="exercise-suggestions"]');
     this.generateForm = page.locator('[data-testid="generate-form"]');
   }
@@ -247,12 +251,19 @@ export class GeneratePage extends BasePage {
   }
   
   /**
+   * Fill patient MRN field
+   */
+  async fillPatientMRN(mrn: string) {
+    await this.patientMrnInput.waitFor({ state: 'visible' });
+    await this.patientMrnInput.fill(mrn);
+  }
+  
+  /**
    * Fill patient information fields
    */
   async fillPatientInfo(mrn?: string, clinicId?: string) {
     if (mrn) {
-      await this.patientMrnInput.waitFor({ state: 'visible' });
-      await this.patientMrnInput.fill(mrn);
+      await this.fillPatientMRN(mrn);
     }
     if (clinicId) {
       await this.clinicIdInput.waitFor({ state: 'visible' });
@@ -283,6 +294,14 @@ export class GeneratePage extends BasePage {
     } else {
       await this.errorMessage.waitFor({ state: 'visible' });
     }
+  }
+  
+  /**
+   * Get number of generated exercises
+   */
+  async getExerciseCount() {
+    const exerciseItems = this.page.locator('[data-testid="exercise-item"]');
+    return await exerciseItems.count();
   }
   
   /**

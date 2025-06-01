@@ -1,5 +1,4 @@
 import { createClient } from '@/services/supabase/server';
-import { cookies } from 'next/headers';
 
 export type AuditAction = 'create' | 'update' | 'delete' | 'generate' | 'feedback' | 'select';
 export type ResourceType = 'prompt' | 'suggestion' | 'feedback' | 'citation' | 'organization';
@@ -19,8 +18,7 @@ export async function logAudit(
   resourceId: string,
   details?: any
 ) {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   
   try {
     const { data: userData, error: userError } = await supabase.auth.getUser();

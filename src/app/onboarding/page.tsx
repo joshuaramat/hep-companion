@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/services/supabase/client';
 import OrganizationSelector from '@/components/features/OrganizationSelector';
@@ -76,7 +76,7 @@ export default function OnboardingPage() {
     };
     
     checkUser();
-  }, [router]);
+  }, [router, supabase]);
   
   const handleOrgSelect = (org: Organization) => {
     setSelectedOrg(org);

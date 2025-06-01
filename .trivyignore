@@ -1,3 +1,6 @@
+# Trivy Ignore File
+# Format: One CVE ID per line
+
 # Node.js vulnerabilities that are patched in runtime
 CVE-2023-30589
 CVE-2023-30590
@@ -10,6 +13,23 @@ CVE-2023-12346
 CVE-2023-12347
 CVE-2023-12348
 
+# Ignore vulnerabilities in test directories
+test/
+tests/
+__tests__/
+*.test.js
+*.spec.js
+playwright-report/
+
+# Common false positives in Node.js projects
+# Add specific CVEs as needed below
+
 # Ignore specific package versions
 package:express
-version:4.17.1 
+version:4.17.1
+
+# Ignore specific CVEs (add as needed)
+# CVE-2021-12345
+
+# Ignore vulnerabilities in specific packages
+# pkg:npm/example-package 

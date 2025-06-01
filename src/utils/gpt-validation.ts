@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Citation, ExerciseSuggestion, GPTResponse } from '@/types/gpt';
+import { ExerciseSuggestion } from '@/types/gpt';
 
 /**
  * Zod schema for validating Citation objects
@@ -41,8 +41,8 @@ export const gptResponseSchema = z.array(exerciseSuggestionSchema)
 export class GPTValidationError extends Error {
   constructor(
     message: string,
-    public details?: Record<string, any>,
-    public code: string = 'VALIDATION_ERROR'
+    public _details?: any,
+    public _code: string = 'VALIDATION_ERROR'
   ) {
     super(message);
     this.name = 'GPTValidationError';
@@ -53,12 +53,12 @@ export class GPTValidationError extends Error {
  * Classification of GPT validation errors for better user feedback
  */
 export enum ValidationErrorType {
-  MALFORMED_JSON = 'MALFORMED_JSON',
-  INVALID_STRUCTURE = 'INVALID_STRUCTURE',
-  MISSING_FIELDS = 'MISSING_FIELDS',
-  INVALID_DATA_TYPE = 'INVALID_DATA_TYPE',
-  EMPTY_RESPONSE = 'EMPTY_RESPONSE',
-  OTHER = 'OTHER'
+  _MALFORMED_JSON = 'MALFORMED_JSON',
+  _INVALID_STRUCTURE = 'INVALID_STRUCTURE',
+  _MISSING_FIELDS = 'MISSING_FIELDS',
+  _INVALID_DATA_TYPE = 'INVALID_DATA_TYPE',
+  _EMPTY_RESPONSE = 'EMPTY_RESPONSE',
+  _OTHER = 'OTHER'
 }
 
 /**
@@ -68,18 +68,18 @@ function classifyValidationError(error: z.ZodError): ValidationErrorType {
   const firstError = error.errors[0];
   
   if (firstError.path.length === 0) {
-    return ValidationErrorType.INVALID_STRUCTURE;
+    return ValidationErrorType._INVALID_STRUCTURE;
   }
   
   if (firstError.message.includes('required')) {
-    return ValidationErrorType.MISSING_FIELDS;
+    return ValidationErrorType._MISSING_FIELDS;
   }
   
   if (firstError.message.includes('Expected')) {
-    return ValidationErrorType.INVALID_DATA_TYPE;
+    return ValidationErrorType._INVALID_DATA_TYPE;
   }
   
-  return ValidationErrorType.OTHER;
+  return ValidationErrorType._OTHER;
 }
 
 /**
@@ -94,7 +94,7 @@ export function validateGPTResponse(data: unknown): ExerciseSuggestion[] {
     if (!data) {
       throw new GPTValidationError(
         'Empty response received', 
-        { errorType: ValidationErrorType.EMPTY_RESPONSE },
+        { errorType: ValidationErrorType._EMPTY_RESPONSE },
         'EMPTY_RESPONSE'
       );
     }
@@ -104,7 +104,7 @@ export function validateGPTResponse(data: unknown): ExerciseSuggestion[] {
       throw new GPTValidationError(
         'Invalid response format: expected an array of suggestions', 
         { 
-          errorType: ValidationErrorType.INVALID_STRUCTURE,
+          errorType: ValidationErrorType._INVALID_STRUCTURE,
           receivedType: typeof data 
         },
         'INVALID_STRUCTURE'
@@ -115,7 +115,7 @@ export function validateGPTResponse(data: unknown): ExerciseSuggestion[] {
     if (data.length === 0) {
       throw new GPTValidationError(
         'No exercise suggestions provided', 
-        { errorType: ValidationErrorType.EMPTY_RESPONSE },
+        { errorType: ValidationErrorType._EMPTY_RESPONSE },
         'EMPTY_RESPONSE'
       );
     }
@@ -125,7 +125,7 @@ export function validateGPTResponse(data: unknown): ExerciseSuggestion[] {
       throw new GPTValidationError(
         'Too many exercise suggestions', 
         { 
-          errorType: ValidationErrorType.INVALID_STRUCTURE,
+          errorType: ValidationErrorType._INVALID_STRUCTURE,
           count: data.length 
         },
         'TOO_MANY_SUGGESTIONS'
@@ -148,15 +148,15 @@ export function validateGPTResponse(data: unknown): ExerciseSuggestion[] {
         let code = 'VALIDATION_ERROR';
         
         switch (errorType) {
-          case ValidationErrorType.MISSING_FIELDS:
+          case ValidationErrorType._MISSING_FIELDS:
             message = 'The exercise suggestion is missing required fields';
             code = 'MISSING_FIELDS';
             break;
-          case ValidationErrorType.INVALID_DATA_TYPE:
+          case ValidationErrorType._INVALID_DATA_TYPE:
             message = 'One or more fields have incorrect data types';
             code = 'INVALID_DATA_TYPE';
             break;
-          case ValidationErrorType.INVALID_STRUCTURE:
+          case ValidationErrorType._INVALID_STRUCTURE:
             message = 'The response structure is invalid';
             code = 'INVALID_STRUCTURE';
             break;
@@ -177,7 +177,7 @@ export function validateGPTResponse(data: unknown): ExerciseSuggestion[] {
       'An error occurred validating the GPT response', 
       {
         originalError: error instanceof Error ? error.message : String(error),
-        errorType: ValidationErrorType.OTHER
+        errorType: ValidationErrorType._OTHER
       },
       'UNKNOWN_ERROR'
     );

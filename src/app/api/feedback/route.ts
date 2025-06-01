@@ -1,7 +1,5 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/services/supabase/server';
-import { cookies } from 'next/headers';
 import { logAudit } from '@/services/audit';
 import { logger } from '@/utils/logger';
 import {
@@ -10,7 +8,6 @@ import {
   createValidationErrorResponse,
   createNotFoundResponse,
   createAuthzErrorResponse,
-  createServerErrorResponse,
   withErrorHandling
 } from '@/utils/api-response';
 
@@ -27,8 +24,7 @@ const feedbackSchema = z.object({
 
 async function handleFeedback(request: Request) {
   // Authentication check
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
   if (authError || !user) {
